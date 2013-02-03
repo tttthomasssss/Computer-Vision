@@ -1,0 +1,221 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      --><title>Demo of convolution with some simple masks</title><meta name="generator" content="MATLAB 7.9"><meta name="date" content="2009-11-27"><meta name="m-file" content="masks_demo"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>Demo of convolution with some simple masks</h1><!--introduction--><p>David Young</p><p>This demo contains code to explore the effects of some simple convolution masks.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Setup</a></li><li><a href="#2">Horizontal differencing</a></li><li><a href="#3">Compare input and output array sizes</a></li><li><a href="#4">Make a vertical differencing mask and see what it does</a></li><li><a href="#5">Simple smoothing</a></li><li><a href="#6">A bigger smoothing mask</a></li><li><a href="#7">A simple centre-surround mask</a></li><li><a href="#8">The Laplacian of Gaussian operation</a></li><li><a href="#9">An arbitrary 2-D mask</a></li><li><a href="#10">Experimenting</a></li></ul></div><h2>Setup<a name="1"></a></h2><p>This assumes that the Sussex vision library is in your Matlab path.</p><p>First, read in an image, and look at it:</p><pre class="codeinput">Image = teachimage(<span class="string">'edin_lib.bmp'</span>);
+imshow(Image);
+</pre><img vspace="5" hspace="5" src="masks_demo_01.png" alt=""> <h2>Horizontal differencing<a name="2"></a></h2><p>Make a horizontal differencing mask, convolve it with the image, and display the result:</p><pre class="codeinput">mask = [1 -1];
+Imout = convolve2(Image, mask, <span class="string">'valid'</span>);
+imshow(Imout, []);
+</pre><img vspace="5" hspace="5" src="masks_demo_02.png" alt=""> <h2>Compare input and output array sizes<a name="3"></a></h2><p>The 'valid' option means that the convolution output has to be smaller than the input image. This prints the two sizes: check that you understand why you get exactly the difference you see below.</p><pre class="codeinput">input_size = size(Image)
+output_size = size(Imout)
+</pre><pre class="codeoutput">input_size =
+   314   469
+output_size =
+   314   468
+</pre><h2>Make a vertical differencing mask and see what it does<a name="4"></a></h2><p>This is an exercise for you. It's a one-character change from the code for horizontal differencing.</p><h2>Simple smoothing<a name="5"></a></h2><p>A minimal 2-pixel mask - smooths by averaging neighbours in a row. You might have to look closely to see the effect it has on the image - the trees at the bottom left are the most obvious place to see it.</p><pre class="codeinput">mask = [0.5 0.5]
+Imout = convolve2(Image, mask, <span class="string">'valid'</span>);
+imshow(Imout, []);
+</pre><pre class="codeoutput">mask =
+    0.5000    0.5000
+</pre><img vspace="5" hspace="5" src="masks_demo_03.png" alt=""> <h2>A bigger smoothing mask<a name="6"></a></h2><p>A larger mask, but it still takes a simple average.</p><pre class="codeinput">mask = ones(9)/(9*9)
+Imout = convolve2(Image, mask, <span class="string">'valid'</span>);
+imshow(Imout, []);
+</pre><pre class="codeoutput">mask =
+  Columns 1 through 7
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123    0.0123
+  Columns 8 through 9
+    0.0123    0.0123
+    0.0123    0.0123
+    0.0123    0.0123
+    0.0123    0.0123
+    0.0123    0.0123
+    0.0123    0.0123
+    0.0123    0.0123
+    0.0123    0.0123
+    0.0123    0.0123
+</pre><img vspace="5" hspace="5" src="masks_demo_04.png" alt=""> <h2>A simple centre-surround mask<a name="7"></a></h2><p>A rough approximation to the "Laplacian" operation. (Strictly, minus the Laplacian.)</p><pre class="codeinput">mask = [-1 -1 -1; -1 8 -1; -1 -1 -1]
+Imout = convolve2(Image, mask, <span class="string">'valid'</span>);
+imshow(Imout, []);
+</pre><pre class="codeoutput">mask =
+    -1    -1    -1
+    -1     8    -1
+    -1    -1    -1
+</pre><img vspace="5" hspace="5" src="masks_demo_05.png" alt=""> <h2>The Laplacian of Gaussian operation<a name="8"></a></h2><p>Combines centre-surround differencing and smoothing. We use minus the fspecial result to get a mask with a positive centre.</p><pre class="codeinput">mask = -fspecial(<span class="string">'log'</span>, 10, 2);
+Imout = convolve2(Image, mask, <span class="string">'valid'</span>);
+imshow(Imout, []);
+</pre><img vspace="5" hspace="5" src="masks_demo_06.png" alt=""> <h2>An arbitrary 2-D mask<a name="9"></a></h2><p>This does a simple form of "edge enhancement", similar to the "sharpening" operation sometimes found in graphics packages, by taking away a local average from each pixel value.</p><pre class="codeinput">mask = -ones(5)/25;
+mask(3,3) = 2
+Imout = convolve2(Image, mask, <span class="string">'valid'</span>);
+imshow(Imout, []);
+</pre><pre class="codeoutput">mask =
+   -0.0400   -0.0400   -0.0400   -0.0400   -0.0400
+   -0.0400   -0.0400   -0.0400   -0.0400   -0.0400
+   -0.0400   -0.0400    2.0000   -0.0400   -0.0400
+   -0.0400   -0.0400   -0.0400   -0.0400   -0.0400
+   -0.0400   -0.0400   -0.0400   -0.0400   -0.0400
+</pre><img vspace="5" hspace="5" src="masks_demo_07.png" alt=""> <h2>Experimenting<a name="10"></a></h2><p>You can download this document and then extract the original M-file with Matlab's <tt>grabcode</tt> function. You can then edit it for experimentation. (Functions from the Sussex vision library are only available to Sussex students and staff.)</p><p>Try constructing some masks of your own and seeing what they do. Try different kinds of patterns, such as line detectors.</p><p>See also convolution_demo.</p><p>Copyright University of Sussex, 2006.</p><p class="footer"><br>
+      Published with MATLAB&reg; 7.9<br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demo of convolution with some simple masks
+%
+% David Young
+%
+% This demo contains code to explore the effects of some simple convolution
+% masks.
+
+%% Setup
+% This assumes that the Sussex vision library is in your Matlab path.
+%
+% First, read in an image, and look at it:
+
+Image = teachimage('edin_lib.bmp');
+imshow(Image);
+
+%% Horizontal differencing
+% Make a horizontal differencing mask, convolve it with the image, and
+% display the result:
+
+mask = [1 -1];
+Imout = convolve2(Image, mask, 'valid');
+imshow(Imout, []);
+
+%% Compare input and output array sizes
+% The 'valid' option means that the convolution output has to be smaller
+% than the input image. This prints the two sizes: check that you
+% understand why you get exactly the difference you see below.
+
+input_size = size(Image)
+output_size = size(Imout)
+
+
+%% Make a vertical differencing mask and see what it does
+% This is an exercise for you. It's a one-character change from the code
+% for horizontal differencing. 
+
+%% Simple smoothing
+% A minimal 2-pixel mask - smooths by averaging neighbours in a row. You
+% might have to look closely to see the effect it has on the image - the
+% trees at the bottom left are the most obvious place to see it.
+
+mask = [0.5 0.5]
+Imout = convolve2(Image, mask, 'valid');
+imshow(Imout, []);
+
+%% A bigger smoothing mask
+% A larger mask, but it still takes a simple average.
+
+mask = ones(9)/(9*9)
+Imout = convolve2(Image, mask, 'valid');
+imshow(Imout, []);
+
+%% A simple centre-surround mask
+% A rough approximation to the "Laplacian" operation. (Strictly, minus the
+% Laplacian.)
+
+mask = [-1 -1 -1; -1 8 -1; -1 -1 -1]
+Imout = convolve2(Image, mask, 'valid');
+imshow(Imout, []);
+
+%% The Laplacian of Gaussian operation
+% Combines centre-surround differencing and smoothing. We use minus the
+% fspecial result to get a mask with a positive centre.
+
+mask = -fspecial('log', 10, 2);
+Imout = convolve2(Image, mask, 'valid');
+imshow(Imout, []);
+
+%% An arbitrary 2-D mask
+%
+% This does a simple form of "edge enhancement", similar to the "sharpening"
+% operation sometimes found in graphics packages, by taking away a local
+% average from each pixel value.
+
+mask = -ones(5)/25; 
+mask(3,3) = 2
+Imout = convolve2(Image, mask, 'valid');
+imshow(Imout, []);
+
+%% Experimenting
+% You can download this document and then extract the original M-file with
+% Matlab's |grabcode| function. You can then edit it for experimentation.
+% (Functions from the Sussex vision library are only available to Sussex
+% students and staff.)
+%
+% Try constructing some masks of your own and seeing what they do. Try
+% different kinds of patterns, such as line detectors.
+%
+% See also convolution_demo.
+%
+% Copyright University of Sussex, 2006.
+
+##### SOURCE END #####
+--></body></html>

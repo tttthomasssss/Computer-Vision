@@ -1,0 +1,330 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      --><title>Convolutions in Matlab</title><meta name="generator" content="MATLAB 7.9"><meta name="date" content="2009-11-27"><meta name="m-file" content="convolution_demo"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>Convolutions in Matlab</h1><!--introduction--><p>David Young</p><p>This illustrates the convolution algorithm, as it might be written in many languages, and also gives some practical information about how convolutions can be carried out in Matlab.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Setup</a></li><li><a href="#2">General convolution algorithm</a></li><li><a href="#3">Better code in Matlab</a></li><li><a href="#4">Using Matlab's built-in function</a></li><li><a href="#5">Using the Sussex convolution function.</a></li><li><a href="#6">Mask combination</a></li><li><a href="#7">Experimenting yourself</a></li></ul></div><h2>Setup<a name="1"></a></h2><p>Set up an array and a mask. This assumes that you have the Sussex vision library in your Matlab path.</p><p>The mask is 3x3, but the methods below will work whatever the size and shape of the mask.</p><pre class="codeinput">im = teachimage(<span class="string">'butterflies1.bmp'</span>);
+imshow(im);
+m = [2 1 0; 1 0 -1; 0 -1 -2]    <span class="comment">% a diagonal edge detection mask</span>
+</pre><pre class="codeoutput">m =
+     2     1     0
+     1     0    -1
+     0    -1    -2
+</pre><img vspace="5" hspace="5" src="convolution_demo_01.png" alt=""> <h2>General convolution algorithm<a name="2"></a></h2><p>The standard way to do a convolution in most languages, using nested loops. This is very slow in Matlab, largely because of array bounds checking.</p><p>Note that the +nmr +nmc in the index calculation for im are there only because the output array starts at (1,1). They would be omitted in a language that supported general array bounds.</p><pre class="codeinput">[nxr, nxc] = size(im);     <span class="comment">% nxr: number of im rows, etc.</span>
+[nmr, nmc] = size(m);
+nyr = nxr - nmr + 1;      <span class="comment">% get valid output region</span>
+nyc = nxc - nmc + 1;
+
+y1 = zeros(nyr, nyc);      <span class="comment">% preallocate output array</span>
+tic
+
+<span class="keyword">for</span> yr = 1:nyr            <span class="comment">% loop over output elements</span>
+    <span class="keyword">for</span> yc = 1:nyc
+        sum = 0;
+        <span class="keyword">for</span> mr = 1:nmr    <span class="comment">% loop over mask elements</span>
+            <span class="keyword">for</span> mc = 1:nmc
+                sum = sum + im(yr-mr+nmr, yc-mc+nmc) * m(mr, mc);
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        y1(yr, yc) = sum;  <span class="comment">% store result</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+toc
+imshow(y1, []);       <span class="comment">% show final result</span>
+</pre><pre class="codeoutput">Elapsed time is 9.627813 seconds.
+</pre><img vspace="5" hspace="5" src="convolution_demo_02.png" alt=""> <h2>Better code in Matlab<a name="3"></a></h2><p>A better way of doing it in Matlab, but without using a library function. This does all the multiplications for each mask element together, adding them together a whole array at a time. It's much faster in this language, and gives the same results, as you can see from the final line of the calculation.</p><p>This is the kind of method you might employ with parallel processing hardware, if it is available. The key to understanding this is to realise that xpart is a shifted copy of the original input, which is multiplied by one mask element and added in to the output. You need to understand how the : operator in Matlab lets you get a subarray.</p><pre class="codeinput">[nxr, nxc] = size(im);     <span class="comment">% nxr: number of im rows, etc.</span>
+[nmr, nmc] = size(m);
+nyr = nxr - nmr + 1;       <span class="comment">% get valid output region</span>
+nyc = nxc - nmc + 1;
+
+y2 = zeros(nyr, nyc);      <span class="comment">% preallocate output array</span>
+
+tic
+<span class="keyword">for</span> mr = 1:nmr              <span class="comment">% loop over mask elements</span>
+    <span class="keyword">for</span> mc = 1:nmc
+        xpart = im(nmr-mr+1:nxr-mr+1, nmc-mc+1:nxc-mc+1);
+        y2 = y2 + xpart * m(mr, mc);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+toc
+
+<span class="comment">% Compare final result</span>
+max_difference = max(max(abs(y2-y1)))
+</pre><pre class="codeoutput">Elapsed time is 0.048684 seconds.
+max_difference =
+     0
+</pre><h2>Using Matlab's built-in function<a name="4"></a></h2><p>This is the standard Matlab function. Again, it returns the same answer. It's faster still. Note that tic and toc probably aren't giving very accurate reports now, as the time elapsed is very small, and they measure clock time rather than CPU time.</p><pre class="codeinput">tic
+y3 = conv2(im, m, <span class="string">'valid'</span>);           <span class="comment">% Mask is SECOND argument</span>
+toc
+
+max_difference = max(max(abs(y3-y1)))
+</pre><pre class="codeoutput">Elapsed time is 0.129462 seconds.
+max_difference =
+     0
+</pre><h2>Using the Sussex convolution function.<a name="5"></a></h2><p>For some masks, convolution can be speeded up further using a property known as "generalised separability". The local Sussex function <tt>convolve2</tt> (also available from the MathWorks file exchange) exploits this to see if it can go faster still. The convolution result is still almost the same, though there is a very tiny numerical difference due to rounding errors in the computations.</p><p>The saving isn't evident on a small 3x3 mask (in fact there's a small overhead). To see what this function buys us, we will use a much larger mask, where the speedup becomes useful. First we time the built-in function, then the local one. For accuracy we now need to use cputime rather than tic and toc.</p><pre class="codeinput">g = fspecial(<span class="string">'log'</span>, 50, 5);   <span class="comment">% biggish Laplacian of Gaussian mask</span>
+
+t = cputime;
+y4 = conv2(im, g, <span class="string">'valid'</span>);
+t = cputime - t;
+disp([<span class="string">'Time for Matlab''s conv2 function: '</span> num2str(t)]);
+
+t = cputime;
+y5 = convolve2(im, g, <span class="string">'valid'</span>);
+t = cputime - t;
+disp([<span class="string">'Time for Sussex convolve2 function: '</span> num2str(t)]);
+
+max_difference = max(max(abs(y5-y4)))
+imshow(y5, []);     <span class="comment">% see the output from either</span>
+</pre><pre class="codeoutput">Time for Matlab's conv2 function: 0.92188
+Time for Sussex convolve2 function: 0.1875
+max_difference =
+  5.8981e-017
+</pre><img vspace="5" hspace="5" src="convolution_demo_03.png" alt=""> <h2>Mask combination<a name="6"></a></h2><p>Finally, this demonstrates the associative property of convolution: that is, you can make a mask that combines the effects of two masks, by convolving the original two together.</p><p>We first do smoothing followed by differencing with our original mask, then we combine the two masks and do a single convolution with the combined mask, and check that the results are the same. Again, there is a very tiny numerical error, but the results are effectively identical.</p><pre class="codeinput">sm = fspecial(<span class="string">'gauss'</span>, 13, 2);      <span class="comment">% A gaussian smoothing mask</span>
+
+<span class="comment">% First, do smoothing followed by the previous edge mask</span>
+y1 = convolve2(im, sm, <span class="string">'valid'</span>);
+y2 = convolve2(y1, m, <span class="string">'valid'</span>);     <span class="comment">% second mask on output of first</span>
+
+<span class="comment">% Changing the order above (to m then sm) will have no effect on the final result</span>
+<span class="comment">% - try it yourself.</span>
+
+<span class="comment">% Now form a combined mask</span>
+cm = convolve2(sm, m, <span class="string">'full'</span>);      <span class="comment">% Need 'full' to get complete mask</span>
+<span class="comment">% cm is a combined smoothing and diagonal edge mask.</span>
+imshow(cm, [], <span class="string">'InitialMagnification'</span>, 500);  <span class="comment">% Look at the combined mask</span>
+y3 = convolve2(im, cm, <span class="string">'valid'</span>);     <span class="comment">% Combined mask on original image</span>
+
+max_difference = max(max(abs(y3-y2)))
+figure; imshow(y3, []);
+</pre><pre class="codeoutput">max_difference =
+  1.6098e-015
+</pre><img vspace="5" hspace="5" src="convolution_demo_04.png" alt=""> <img vspace="5" hspace="5" src="convolution_demo_05.png" alt=""> <h2>Experimenting yourself<a name="7"></a></h2><p>You can experiment with this demonstration yourself, by downloading this html document and using Matlab's <tt>grabcode</tt> function to extract the original M-file. You can then edit it to try different ideas.</p><p>This document may be accessible from outside Sussex University, but to use functions from the local library you need to be a student or member of staff of the University.</p><p>Copyright University of Sussex, 2006</p><p class="footer"><br>
+      Published with MATLAB&reg; 7.9<br></p></div><!--
+##### SOURCE BEGIN #####
+%% Convolutions in Matlab
+%
+% David Young
+%
+% This illustrates the convolution algorithm, as it might be written in
+% many languages, and also gives some practical information about how
+% convolutions can be carried out in Matlab.
+%
+%% Setup
+% Set up an array and a mask. This assumes that you have the Sussex vision
+% library in your Matlab path.
+%
+% The mask is 3x3, but the methods below
+% will work whatever the size and shape of the mask.
+
+im = teachimage('butterflies1.bmp');
+imshow(im);
+m = [2 1 0; 1 0 -1; 0 -1 -2]    % a diagonal edge detection mask
+
+%% General convolution algorithm
+% The standard way to do a convolution in most languages, using
+% nested loops.
+% This is very slow in Matlab, largely because of array bounds
+% checking.
+%
+% Note that the +nmr +nmc in the index calculation for im are there
+% only because the output array starts at (1,1). They would be
+% omitted in a language that supported general array bounds.
+
+[nxr, nxc] = size(im);     % nxr: number of im rows, etc.
+[nmr, nmc] = size(m);
+nyr = nxr - nmr + 1;      % get valid output region
+nyc = nxc - nmc + 1;
+
+y1 = zeros(nyr, nyc);      % preallocate output array
+tic                       
+
+for yr = 1:nyr            % loop over output elements
+    for yc = 1:nyc
+        sum = 0;
+        for mr = 1:nmr    % loop over mask elements
+            for mc = 1:nmc
+                sum = sum + im(yr-mr+nmr, yc-mc+nmc) * m(mr, mc);
+            end
+        end
+        y1(yr, yc) = sum;  % store result
+    end
+end
+
+toc
+imshow(y1, []);       % show final result
+
+%% Better code in Matlab
+% A better way of doing it in Matlab, but without using a library function.
+% This does all the multiplications for each mask element together, adding
+% them together a whole array at a time. It's much faster in this language,
+% and gives the same results, as you can see from the final line of the
+% calculation.
+%
+% This is the kind of method you might employ with parallel processing
+% hardware, if it is available.
+% The key to understanding this is to realise that xpart is a shifted
+% copy of the original input, which is multiplied by one mask element
+% and added in to the output. You need to understand how the : operator
+% in Matlab lets you get a subarray.
+
+[nxr, nxc] = size(im);     % nxr: number of im rows, etc.
+[nmr, nmc] = size(m);
+nyr = nxr - nmr + 1;       % get valid output region
+nyc = nxc - nmc + 1;
+
+y2 = zeros(nyr, nyc);      % preallocate output array
+
+tic
+for mr = 1:nmr              % loop over mask elements
+    for mc = 1:nmc
+        xpart = im(nmr-mr+1:nxr-mr+1, nmc-mc+1:nxc-mc+1);
+        y2 = y2 + xpart * m(mr, mc);
+    end
+end
+toc
+
+% Compare final result
+max_difference = max(max(abs(y2-y1)))
+
+%% Using Matlab's built-in function
+% This is the standard Matlab function. Again, it returns the same answer.
+% It's faster still. Note that tic and toc probably aren't giving very
+% accurate reports now, as the time elapsed is very small, and they measure
+% clock time rather than CPU time.
+
+tic
+y3 = conv2(im, m, 'valid');           % Mask is SECOND argument
+toc
+
+max_difference = max(max(abs(y3-y1)))
+
+%% Using the Sussex convolution function.
+% For some masks, convolution can be speeded up further using a property
+% known as "generalised separability". The local Sussex function
+% |convolve2| (also available from the MathWorks file exchange) exploits
+% this to see if it can go faster still. The convolution result is still
+% almost the same, though there is a very tiny numerical difference due to
+% rounding errors in the computations.
+%
+% The saving isn't evident on a small 3x3 mask (in fact there's a small
+% overhead). To see what this function buys us, we will use a much larger
+% mask, where the speedup becomes useful. First we time the built-in
+% function, then the local one. For accuracy we now need to use cputime
+% rather than tic and toc.
+
+g = fspecial('log', 50, 5);   % biggish Laplacian of Gaussian mask
+
+t = cputime;
+y4 = conv2(im, g, 'valid');
+t = cputime - t;
+disp(['Time for Matlab''s conv2 function: ' num2str(t)]);
+
+t = cputime;
+y5 = convolve2(im, g, 'valid');
+t = cputime - t;
+disp(['Time for Sussex convolve2 function: ' num2str(t)]);
+
+max_difference = max(max(abs(y5-y4)))
+imshow(y5, []);     % see the output from either
+
+%% Mask combination
+% Finally, this demonstrates the associative property of convolution: that
+% is, you can make a mask that combines the effects of two masks, by
+% convolving the original two together.
+%
+% We first do smoothing followed by differencing with our original mask,
+% then we combine the two masks and do a single convolution with the
+% combined mask, and check that the results are the same. Again, there is a
+% very tiny numerical error, but the results are effectively identical.
+
+sm = fspecial('gauss', 13, 2);      % A gaussian smoothing mask
+
+% First, do smoothing followed by the previous edge mask
+y1 = convolve2(im, sm, 'valid');     
+y2 = convolve2(y1, m, 'valid');     % second mask on output of first
+
+% Changing the order above (to m then sm) will have no effect on the final result
+% - try it yourself.
+
+% Now form a combined mask
+cm = convolve2(sm, m, 'full');      % Need 'full' to get complete mask
+% cm is a combined smoothing and diagonal edge mask.
+imshow(cm, [], 'InitialMagnification', 500);  % Look at the combined mask
+y3 = convolve2(im, cm, 'valid');     % Combined mask on original image
+
+max_difference = max(max(abs(y3-y2)))
+figure; imshow(y3, []);
+
+%% Experimenting yourself
+% You can experiment with this demonstration yourself, by downloading this
+% html document and using Matlab's |grabcode| function to extract the
+% original M-file. You can then edit it to try different ideas.
+%
+% This document may be accessible from outside Sussex University, but to
+% use functions from the local library you need to be a student or member
+% of staff of the University.
+%
+% Copyright University of Sussex, 2006
+
+##### SOURCE END #####
+--></body></html>

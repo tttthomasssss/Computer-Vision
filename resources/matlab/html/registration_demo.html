@@ -1,0 +1,220 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      --><title>Demonstration of registration of MR images</title><meta name="generator" content="MATLAB 7.9"><meta name="date" content="2009-12-07"><meta name="m-file" content="registration_demo"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>Demonstration of registration of MR images</h1><!--introduction--><p>David Young</p><p>Demonstrates registering two slices from an MR scan using a correlation matcher. Data are from the <a href="http://www.oasis-brains.org/">Oasis dataset</a>. Any further use of the images which appear on the web version of this document, or which are made available via software at Sussex University, is covered by the data use agreement which can be found on the Oasis website.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Read in and display a set of MR images</a></li><li><a href="#2">Select 2 images for experimentation and display them</a></li><li><a href="#3">Find corresponding points in the two images</a></li><li><a href="#4">Make a transformation</a></li><li><a href="#5">Check the transform</a></li><li><a href="#6">Experimenting</a></li></ul></div><h2>Read in and display a set of MR images<a name="1"></a></h2><p>Each image is a slice from the set making up the complete scan. We display them in sequence going through the head from side to side, with false colour to make the structures easier to see.</p><p>This assumes that the Sussex vision library is in your Matlab path.</p><pre class="codeinput">nims = mr_image;
+<span class="keyword">for</span> i = 1:nims
+    imshow(imresize(mr_image(i),2)); colormap(jet); drawnow;
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="registration_demo_01.png" alt=""> <h2>Select 2 images for experimentation and display them<a name="2"></a></h2><pre class="codeinput">offset = 20;    <span class="comment">% the distance from the central plane</span>
+sep = 5;        <span class="comment">% the separation between the two images</span>
+l1 = floor(nims)/2 + offset;
+l2 = l1 + sep;
+im1 = mr_image(l1);
+im2 = mr_image(l2);
+figure; imshow(im1);
+figure; imshow(im2);
+</pre><img vspace="5" hspace="5" src="registration_demo_02.png" alt=""> <img vspace="5" hspace="5" src="registration_demo_03.png" alt=""> <h2>Find corresponding points in the two images<a name="3"></a></h2><p>We use a normalised correlation matching method. See <tt>corrmatch</tt> (only available at Sussex) for details.</p><pre class="codeinput"><span class="comment">% Set the parameters for the matcher</span>
+featurepatchsize = 5;   <span class="comment">% region size for computing local variance</span>
+relthresh = 0.05;       <span class="comment">% relative threshold for detecting features</span>
+searchpatchsize = 41;   <span class="comment">% the size of the patch used as a template</span>
+xdispmin = -20; xdispmax = 20;  <span class="comment">% The maximum offset along each axis</span>
+ydispmin = -20; ydispmax = 20;
+convtol = 0.1;      <span class="comment">% used in convolve2, q.v., to speed up convolution</span>
+matchtol = 2;       <span class="comment">% the agreement required between forward and backward matches</span>
+printprogress = 50;     <span class="comment">% how often to print progress report</span>
+
+matches = corrmatch(<span class="keyword">...</span>
+    im1, im2, featurepatchsize, relthresh, <span class="keyword">...</span>
+    searchpatchsize, xdispmin, xdispmax, ydispmin, ydispmax, <span class="keyword">...</span>
+    convtol, matchtol, printprogress);
+
+[f1, f2, f3] = showmatches(im1, im2, matches);
+</pre><pre class="codeoutput">Found 430 features in image 1 to match
+Starting matching
+   Done 50 tests
+   Done 100 tests
+   Done 150 tests
+   Done 200 tests
+   Done 250 tests
+   Done 300 tests
+   Done 350 tests
+   Done 400 tests
+No match found for 124 features, 306 consistent matches found
+</pre><img vspace="5" hspace="5" src="registration_demo_04.png" alt=""> <img vspace="5" hspace="5" src="registration_demo_05.png" alt=""> <img vspace="5" hspace="5" src="registration_demo_06.png" alt=""> <h2>Make a transformation<a name="4"></a></h2><p>We can test whether the matching was good by seeing whether the vectors found will successfully warp one image so that it lies on top of the other.</p><p>We use the Matlab Image Processing Toolbox's transform functions to estimate a transform from our match points, and then the original two images are displayed, plus a warped version of image 2, which ought to be close in position to image 1. Since the offsets are small, it isn't easy to see if this is the case.</p><pre class="codeinput"><span class="comment">% Get the transform</span>
+input_points = [matches(4,:); matches(3,:)]';
+base_points = [matches(2,:); matches(1,:)]';
+<span class="comment">% Apply the transform to image 2</span>
+tform = cp2tform(input_points, base_points, <span class="string">'piecewise linear'</span>);
+transim = imtransform(im2, tform, <span class="string">'Xdata'</span>, [1 size(im1,2)], <span class="string">'Ydata'</span>, [1 size(im1,1)]);
+figure(f1); imshow(im1); title(<span class="string">'Image 1'</span>);
+figure(f2); imshow(im2); title(<span class="string">'Image 2'</span>);
+figure(f3); imshow(transim); title(<span class="string">'Image 2 transformed'</span>);
+</pre><img vspace="5" hspace="5" src="registration_demo_07.png" alt=""> <img vspace="5" hspace="5" src="registration_demo_08.png" alt=""> <img vspace="5" hspace="5" src="registration_demo_09.png" alt=""> <h2>Check the transform<a name="5"></a></h2><p>To make it easier to see whether the transform was accurate, we display the edges from the original two images superimposed, and the edges from the warped image 2 superimposed on image 1. We can see, particularly round the skull, that the transformation has shifted the edges into close correspondence.</p><pre class="codeinput">e = superimpose_edges(im1, im2);
+figure(f1); imshow(e, []); colormap([0 0 0; 0 1 0; 1 0 0]);
+title(<span class="string">'Edges from original images'</span>);
+e = superimpose_edges(im1, transim);
+figure(f2); imshow(e, []); colormap([0 0 0; 0 1 0; 1 0 0]);
+title(<span class="string">'Edges from Image 1 and Image 2 transformed'</span>);
+</pre><img vspace="5" hspace="5" src="registration_demo_10.png" alt=""> <img vspace="5" hspace="5" src="registration_demo_11.png" alt=""> <h2>Experimenting<a name="6"></a></h2><p>You can download this document and then extract the original M-file with Matlab's <tt>grabcode</tt> function. You can then edit it for experimentation. (Functions from the Sussex vision library are only available to Sussex students and staff.)</p><p>Copyright University of Sussex, 2009.</p><p class="footer"><br>
+      Published with MATLAB&reg; 7.9<br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstration of registration of MR images
+%
+% David Young
+%
+% Demonstrates registering two slices from an MR scan using a correlation
+% matcher. Data are from the <http://www.oasis-brains.org/ Oasis dataset>.
+% Any further use of the images which appear on the web version of this
+% document, or which are made available via software at Sussex University,
+% is covered by the data use agreement which can be found on the Oasis
+% website.
+
+%% Read in and display a set of MR images
+% Each image is a slice from the set making up the complete scan.
+% We display them in sequence going through the head from side to side,
+% with false colour to make the structures easier to see.
+%
+% This assumes that the Sussex vision library is in your Matlab path.
+
+nims = mr_image;
+for i = 1:nims
+    imshow(imresize(mr_image(i),2)); colormap(jet); drawnow;
+end
+
+%% Select 2 images for experimentation and display them
+
+offset = 20;    % the distance from the central plane
+sep = 5;        % the separation between the two images
+l1 = floor(nims)/2 + offset;
+l2 = l1 + sep;
+im1 = mr_image(l1);
+im2 = mr_image(l2);
+figure; imshow(im1);
+figure; imshow(im2);
+
+%% Find corresponding points in the two images
+% We use a normalised correlation matching method. See |corrmatch| (only
+% available at Sussex) for details.
+
+% Set the parameters for the matcher
+featurepatchsize = 5;   % region size for computing local variance
+relthresh = 0.05;       % relative threshold for detecting features
+searchpatchsize = 41;   % the size of the patch used as a template
+xdispmin = -20; xdispmax = 20;  % The maximum offset along each axis
+ydispmin = -20; ydispmax = 20;  
+convtol = 0.1;      % used in convolve2, q.v., to speed up convolution
+matchtol = 2;       % the agreement required between forward and backward matches
+printprogress = 50;     % how often to print progress report
+
+matches = corrmatch(...
+    im1, im2, featurepatchsize, relthresh, ...
+    searchpatchsize, xdispmin, xdispmax, ydispmin, ydispmax, ...
+    convtol, matchtol, printprogress);
+
+[f1, f2, f3] = showmatches(im1, im2, matches);
+
+%% Make a transformation
+% We can test whether the matching was good by seeing whether the vectors
+% found will successfully warp one image so that it lies on top of the
+% other. 
+%
+% We use the Matlab Image Processing Toolbox's transform functions to
+% estimate a transform from our match points, and then the original two
+% images are displayed, plus a warped version of image 2, which ought to
+% be close in position to image 1. Since the offsets are small, it isn't
+% easy to see if this is the case.
+
+% Get the transform
+input_points = [matches(4,:); matches(3,:)]';
+base_points = [matches(2,:); matches(1,:)]';
+% Apply the transform to image 2
+tform = cp2tform(input_points, base_points, 'piecewise linear');
+transim = imtransform(im2, tform, 'Xdata', [1 size(im1,2)], 'Ydata', [1 size(im1,1)]);
+figure(f1); imshow(im1); title('Image 1');
+figure(f2); imshow(im2); title('Image 2');
+figure(f3); imshow(transim); title('Image 2 transformed');
+%% Check the transform
+% To make it easier to see whether the transform was accurate, we display
+% the edges from the original two images superimposed, and the edges from
+% the warped image 2 superimposed on image 1. We can see, particularly
+% round the skull, that the transformation has shifted the edges into close
+% correspondence.
+
+e = superimpose_edges(im1, im2);
+figure(f1); imshow(e, []); colormap([0 0 0; 0 1 0; 1 0 0]);
+title('Edges from original images');
+e = superimpose_edges(im1, transim);
+figure(f2); imshow(e, []); colormap([0 0 0; 0 1 0; 1 0 0]);
+title('Edges from Image 1 and Image 2 transformed');
+
+%% Experimenting
+% You can download this document and then extract the original M-file with
+% Matlab's |grabcode| function. You can then edit it for experimentation.
+% (Functions from the Sussex vision library are only available to Sussex
+% students and staff.)
+%
+% Copyright University of Sussex, 2009.
+
+##### SOURCE END #####
+--></body></html>

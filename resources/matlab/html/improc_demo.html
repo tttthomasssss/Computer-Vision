@@ -1,0 +1,189 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      --><title>Demonstration of a selection of image processing operations</title><meta name="generator" content="MATLAB 7.9"><meta name="date" content="2009-11-27"><meta name="m-file" content="improc_demo"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>Demonstration of a selection of image processing operations</h1><!--introduction--><p>David Young</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Setup</a></li><li><a href="#2">Edge detection</a></li><li><a href="#3">Thresholding</a></li><li><a href="#4">Finding connected regions</a></li><li><a href="#5">Finding the sizes of different regions</a></li><li><a href="#6">Finding blobs in a certain size range (100-200 pixels)</a></li><li><a href="#7">Experimenting</a></li></ul></div><h2>Setup<a name="1"></a></h2><p>This assumes that the Sussex vision library is in your Matlab path.</p><p>Read in an image, and display it.</p><pre class="codeinput">Image = teachimage(<span class="string">'vcr.bmp'</span>);
+imshow(Image);
+</pre><img vspace="5" hspace="5" src="improc_demo_01.png" alt=""> <h2>Edge detection<a name="2"></a></h2><p>Experiment with the two kinds of edge detectors described in the lectures. We use the implementations from the Matlab Image Processing Toolbox, accessed via the <tt>edge</tt> function.</p><pre class="codeinput">edges = edge(Image, <span class="string">'log'</span>, [], 1);     <span class="comment">% Marr-type, sigma = 1</span>
+figure; imshow(edges); title(<span class="string">'Marr edges, sigma = 1'</span>);
+edges = edge(Image, <span class="string">'log'</span>, [], 2);     <span class="comment">% Marr-type, sigma = 2</span>
+figure; imshow(edges); title(<span class="string">'Marr edges, sigma = 2'</span>);
+
+edges = edge(Image, <span class="string">'canny'</span>, [], 1);   <span class="comment">% Canny, sigma = 1</span>
+figure; imshow(edges); title(<span class="string">'Canny edges, sigma = 1'</span>);
+edges = edge(Image, <span class="string">'canny'</span>, [], 2);   <span class="comment">% Canny, sigma = 2</span>
+figure; imshow(edges); title(<span class="string">'Canny edges, sigma = 2'</span>);
+</pre><img vspace="5" hspace="5" src="improc_demo_02.png" alt=""> <img vspace="5" hspace="5" src="improc_demo_03.png" alt=""> <img vspace="5" hspace="5" src="improc_demo_04.png" alt=""> <img vspace="5" hspace="5" src="improc_demo_05.png" alt=""> <h2>Thresholding<a name="3"></a></h2><p>Matlab provides a thresholding function, but the operation is most simply written (for ordinary arrays of type <tt>double</tt>) using the arithmetic "greater than" operator.</p><pre class="codeinput">thresh = 0.5;
+
+bin = Image &gt; thresh;      <span class="comment">% regions brighter than thresh</span>
+figure; imshow(bin); title([<span class="string">'White is where original image &gt; '</span> num2str(thresh)]);
+
+bin = Image &lt; thresh;      <span class="comment">% regions darker than thresh</span>
+figure; imshow(bin); title([<span class="string">'White is where original image &lt; '</span> num2str(thresh)]);
+</pre><img vspace="5" hspace="5" src="improc_demo_06.png" alt=""> <img vspace="5" hspace="5" src="improc_demo_07.png" alt=""> <h2>Finding connected regions<a name="4"></a></h2><p>We use the toolbox function, with 8-connectivity.</p><pre class="codeinput">labelled = bwlabel(bin, 8);
+figure; imshow(labelled, []);
+colormap(jet);    <span class="comment">% different regions different colours</span>
+</pre><img vspace="5" hspace="5" src="improc_demo_08.png" alt=""> <h2>Finding the sizes of different regions<a name="5"></a></h2><p>We find areas as an example, but lots of other statistics may be measured - see help for <tt>regionprops</tt>. The second line of code extracts the sizes from the structure array to an ordinary array. For more information, see the Matlab documentation on structure arrays.</p><p>The number of blobs is printed.</p><pre class="codeinput">blobstructures = regionprops(labelled, <span class="string">'Area'</span>);
+blobsizes = [blobstructures.Area];
+no_blobs = length(blobsizes)
+</pre><pre class="codeoutput">no_blobs =
+   135
+</pre><h2>Finding blobs in a certain size range (100-200 pixels)<a name="6"></a></h2><p>We can easily pick out the blobs in a size range of interest. <tt>find</tt> is a useful function that returns the indices of non-zero elements of an array. In this case, the indices returned are the same as the labels of the blobs in the size range.</p><p>We then select just the blobs with these labels, using <tt>ismember</tt> to test each pixel of the labelled array to see if it belongs to one of the blobs of interest.</p><pre class="codeinput">minBlobSize = 100;
+maxBlobSize = 200;
+special_blobs = find(blobsizes &gt;= minBlobSize &amp; blobsizes &lt;= maxBlobSize)
+some_blobs = ismember(labelled, special_blobs);
+imshow(some_blobs);
+</pre><pre class="codeoutput">special_blobs =
+  Columns 1 through 7
+     7    11    64    70    71    75    76
+  Columns 8 through 10
+    82    83    92
+</pre><img vspace="5" hspace="5" src="improc_demo_09.png" alt=""> <h2>Experimenting<a name="7"></a></h2><p>You can download this document and then extract the original M-file with Matlab's <tt>grabcode</tt> function. You can then edit it for experimentation. (Functions from the Sussex vision library are only available to Sussex students and staff.)</p><p>Copyright University of Sussex, 2006, 2008.</p><p class="footer"><br>
+      Published with MATLAB&reg; 7.9<br></p></div><!--
+##### SOURCE BEGIN #####
+%% Demonstration of a selection of image processing operations
+%
+% David Young
+
+%% Setup
+% This assumes that the Sussex vision library is in your Matlab path.
+%
+% Read in an image, and display it.
+
+Image = teachimage('vcr.bmp');
+imshow(Image);
+
+%% Edge detection
+% Experiment with the two kinds of edge detectors described in the lectures.
+% We use the implementations from the Matlab Image
+% Processing Toolbox, accessed via the |edge| function. 
+
+edges = edge(Image, 'log', [], 1);     % Marr-type, sigma = 1
+figure; imshow(edges); title('Marr edges, sigma = 1');
+edges = edge(Image, 'log', [], 2);     % Marr-type, sigma = 2
+figure; imshow(edges); title('Marr edges, sigma = 2');
+
+edges = edge(Image, 'canny', [], 1);   % Canny, sigma = 1
+figure; imshow(edges); title('Canny edges, sigma = 1');
+edges = edge(Image, 'canny', [], 2);   % Canny, sigma = 2
+figure; imshow(edges); title('Canny edges, sigma = 2');
+
+%% Thresholding
+% Matlab provides a thresholding function, but the operation is most simply written
+% (for ordinary arrays of type |double|) using the arithmetic "greater
+% than" operator.
+
+thresh = 0.5;
+
+bin = Image > thresh;      % regions brighter than thresh
+figure; imshow(bin); title(['White is where original image > ' num2str(thresh)]);
+
+bin = Image < thresh;      % regions darker than thresh
+figure; imshow(bin); title(['White is where original image < ' num2str(thresh)]);
+
+%% Finding connected regions
+% We use the toolbox function, with 8-connectivity.
+
+labelled = bwlabel(bin, 8);   
+figure; imshow(labelled, []);
+colormap(jet);    % different regions different colours
+
+%% Finding the sizes of different regions
+% We find areas as an example, but lots of other statistics may be measured
+% - see help for |regionprops|.
+% The second line of code extracts the sizes from the structure array to an
+% ordinary array. For more information, see the Matlab documentation on structure
+% arrays.
+%
+% The number of blobs is printed.
+
+blobstructures = regionprops(labelled, 'Area');
+blobsizes = [blobstructures.Area]; 
+no_blobs = length(blobsizes)
+
+%% Finding blobs in a certain size range (100-200 pixels)
+% We can easily pick out the blobs in a size range of interest. |find| is
+% a useful function that returns the indices of non-zero elements of an
+% array. In this case, the indices returned are the same as the labels of
+% the blobs in the size range.
+%
+% We then select just the blobs with these labels, using |ismember| to test
+% each pixel of the labelled array to see if it belongs to one of the blobs
+% of interest.
+
+minBlobSize = 100;
+maxBlobSize = 200;
+special_blobs = find(blobsizes >= minBlobSize & blobsizes <= maxBlobSize)
+some_blobs = ismember(labelled, special_blobs);
+imshow(some_blobs);
+
+%% Experimenting
+% You can download this document and then extract the original M-file with
+% Matlab's |grabcode| function. You can then edit it for experimentation.
+% (Functions from the Sussex vision library are only available to Sussex
+% students and staff.)
+%
+% Copyright University of Sussex, 2006, 2008.
+
+##### SOURCE END #####
+--></body></html>

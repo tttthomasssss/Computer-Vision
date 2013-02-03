@@ -1,0 +1,502 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      --><title>Fourier Transform Demonstration</title><meta name="generator" content="MATLAB 7.9"><meta name="date" content="2009-11-27"><meta name="m-file" content="fft_image_demo"><style type="text/css">
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head><body><div class="content"><h1>Fourier Transform Demonstration</h1><!--introduction--><p>David Young</p><p>A demonstration of the Discrete Fourier transform applied to 1-D and 2-D data.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Read in an image and display it</a></li><li><a href="#2">Get a 1-D profile</a></li><li><a href="#3">Fourier components of 1-D data</a></li><li><a href="#4">Display individual Fourier components</a></li><li><a href="#7">Filtering the profile</a></li><li><a href="#10">Display 2-D Fourier patterns</a></li><li><a href="#11">Compute 2-D FFT of image</a></li><li><a href="#12">Reconstruct the image</a></li><li><a href="#13">Filter the image</a></li><li><a href="#16">Experimenting yourself</a></li></ul></div><h2>Read in an image and display it<a name="1"></a></h2><p>The Sussex vision library must be in the Matlab path - see intro_demo.</p><pre class="codeinput"><span class="comment">% Read an image, truncate it to dimensions that are fast for the FFT, and</span>
+<span class="comment">% zero-mean it in order to avoid a big peak in one corner of the FFT array.</span>
+fftim = teachimage(<span class="string">'chess1.bmp'</span>);
+fftim = fftim(1:2:384, 1:2:512);
+fftim = fftim - mean(mean(fftim));
+<span class="comment">% Get its range so that display can be consistent.</span>
+range = [min(fftim(:)) max(fftim(:))];
+f1 = figure; imshow(fftim, range);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_01.png" alt=""> <h2>Get a 1-D profile<a name="2"></a></h2><p>Extract one row from the middle of the image to use to illustrate 1-D operations.</p><pre class="codeinput">row = round(size(fftim,1)/2);
+<span class="comment">% Show the selected row</span>
+figure(f1); hold <span class="string">on</span>; plot([1 size(fftim,2)], [row row], <span class="string">'r-'</span>); hold <span class="string">off</span>
+<span class="comment">% Extract the row</span>
+x = fftim(row, :);
+<span class="comment">% Display the grey-level profile</span>
+figure; plot(x); title(<span class="string">'Grey-level profile'</span>);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_02.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_03.png" alt=""> <h2>Fourier components of 1-D data<a name="3"></a></h2><p>Compute the transform of the profile and display the spectrum.</p><p>The spectrum is symmetric about its mid-point because the data are real. Thus low spatial frequencies are at the ends, and high frequencies in the middle.</p><pre class="codeinput">X = fft(x);
+figure; plot(abs(X)); title(<span class="string">'Amplitudes as a function of frequency'</span>);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_04.png" alt=""> <h2>Display individual Fourier components<a name="4"></a></h2><p>... together with a reconstruction that includes components at the current and lower spatial frequencies.</p><p>We used <tt>fft</tt> to get the amplitudes of the components. Normally to reconstruct we would use <tt>ifft</tt>, but here we compute the individual components explicitly so that we can look at them, and we add them up explicitly to gradually reconstruct the original profile.</p><p>At the end of the loop, the reconstructed result is the same as the original profile, but on the way we see reconstructions with high frequencies missing.</p><pre class="codeinput">figure;
+mn = min(x); mx = max(x);
+
+<span class="comment">% Initialise. The starting point for the reconstruction is the</span>
+<span class="comment">% "zero-frequency" or constant component held in X(1).</span>
+N = length(x);
+reconstruction = X(1)/N;
+p = 2*pi*(0:N-1)/N;
+
+<span class="keyword">for</span> k = 1:N/2
+</pre><pre class="codeinput">    <span class="comment">% Compute the component for the frequency that gives k cycles in the</span>
+    <span class="comment">% width of the image.</span>
+    a = X(k+1);
+    phi = k*p;
+    <span class="comment">% We take advantage of the symmetry that results from x being real to</span>
+    <span class="comment">% ignore the top half of X. We therefore need to double the</span>
+    <span class="comment">% intermediate components.</span>
+    <span class="keyword">if</span> k &lt; N/2; s = 2; <span class="keyword">else</span> s = 1; <span class="keyword">end</span>
+    component = s*(real(a)*cos(phi) - imag(a)*sin(phi))/N;
+
+    <span class="comment">% and add the component to the reconstruction so far</span>
+    reconstruction = reconstruction + component;
+
+    <span class="comment">% Plot the results, but not for every iteration</span>
+    <span class="keyword">if</span> ismember(k, [1:7 8:16:63 64:32:N/2])
+        subplot(2,1,1);
+        plot(component);
+        axis([1 length(x) mn mx]);
+        title([<span class="string">'Spatial frequency '</span> num2str(k) <span class="string">' cycles across the image'</span>]);
+        subplot(2,1,2);
+        plot(reconstruction);
+        axis([1 length(x) mn mx]);
+        title(<span class="string">'Reconstruction so far'</span>);
+        pause;
+    <span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="fft_image_demo_05.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_06.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_07.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_08.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_09.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_10.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_11.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_12.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_13.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_14.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_15.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_16.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_17.png" alt=""> <img vspace="5" hspace="5" src="fft_image_demo_18.png" alt=""> <pre class="codeinput"><span class="keyword">end</span>
+</pre><h2>Filtering the profile<a name="7"></a></h2><p>We can apply filters by multiplying the transform by a set of weights and then transforming back. This is equivalent to convolving the original profile with a mask that is the transform of the set of weights.</p><p>For example, we pick out low frequencies, middle frequencies and high frequencies with three band-pass Gaussian masks. We have to make sure the symmetries are maintained in the masks.</p><pre class="codeinput">figure;
+
+<span class="comment">% A low-frequency mask, centred on zero-frequency</span>
+mask = zeros(1, N);
+f = 0:N/2;
+sigmaf = 10;
+mask(1:N/2+1) = exp(-(f/(2*sigmaf)).^2);
+mask(N:-1:N/2+2) = mask(2:N/2);
+subplot(3,1,1); plot(mask); title(<span class="string">'Low-pass mask'</span>);
+
+<span class="comment">% Multiply the FT by the mask</span>
+Xfilt = X .* mask;
+subplot(3,1,2); plot(abs(Xfilt)); title(<span class="string">'Weighted transform'</span>);
+
+<span class="comment">% Transform back</span>
+xfilt = ifft(Xfilt);
+subplot(3,1,3); plot(xfilt); title(<span class="string">'Low-pass filtered signal'</span>);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_19.png" alt=""> <p>Shift the mask to make a mid-frequency mask</p><pre class="codeinput">cfreq = N/4; <span class="comment">% Centre frequency in cycles/width of image</span>
+mask(1:N/2+1) = exp(-((f-cfreq)/(2*sigmaf)).^2);
+mask(N:-1:N/2+2) = mask(2:N/2);
+subplot(3,1,1); plot(mask); title(<span class="string">'Mid-pass mask'</span>);
+Xfilt = X .* mask;
+subplot(3,1,2); plot(abs(Xfilt)); title(<span class="string">'Weighted transform'</span>);
+xfilt = ifft(Xfilt);
+subplot(3,1,3); plot(xfilt); title(<span class="string">'Mid-pass filtered signal'</span>);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_20.png" alt=""> <p>and to make a high-frequency mask</p><pre class="codeinput">cfreq = N/2; <span class="comment">% Centre frequency in cycles/width of image</span>
+mask(1:N/2+1) = exp(-((f-cfreq)/(2*sigmaf)).^2);
+mask(N:-1:N/2+2) = mask(2:N/2);
+subplot(3,1,1); plot(mask); title(<span class="string">'High-pass mask'</span>);
+Xfilt = X .* mask;
+subplot(3,1,2); plot(abs(Xfilt)); title(<span class="string">'Weighted transform'</span>);
+xfilt = ifft(Xfilt);
+subplot(3,1,3); plot(xfilt); title(<span class="string">'High-pass filtered signal'</span>);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_21.png" alt=""> <h2>Display 2-D Fourier patterns<a name="10"></a></h2><p>Compute and display the 2-D patterns that are the equivalent of the sine wave components in 1-D. The FT of an image involves breaking it down into these plaid patterns.</p><p>This displays only the low-frequency patterns. We generate them by applying the inverse 2-D FT to a "delta-function" spectrum - that is, a spectrum which is non-zero at only one point. (They could also be computed by calls to sin and cos.)</p><pre class="codeinput">figure;
+
+s = 256;
+imsz = 5;
+<span class="keyword">for</span> i = 1:imsz
+    <span class="keyword">for</span> j = 1:imsz
+        subplot(imsz, imsz, (i-1)*imsz+j);
+        y = zeros(s);
+        y(i, j) = 1;   <span class="comment">% Set one frequence non-zero.</span>
+
+        <span class="comment">% As with the 1-D transform, we need to make this symmetrical to</span>
+        <span class="comment">% ensure the result is real</span>
+        <span class="keyword">if</span> i &gt; 1; y(end+2-i, j) = 1; <span class="keyword">end</span>
+        <span class="keyword">if</span> j &gt; 1; y(i, end+2-j) = 1; <span class="keyword">end</span>
+        <span class="keyword">if</span> i &gt; 1 &amp;&amp; j &gt; 1; y(end+2-i, end+2-j) = 1; <span class="keyword">end</span>
+
+        f = ifft2(y);
+        imshow(f, []);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="fft_image_demo_22.png" alt=""> <h2>Compute 2-D FFT of image<a name="11"></a></h2><p>... and display its spectrum. We use some gamma correction to make it more visible. Note that it has a rotational symmetry.</p><p>The amplitude of each component is shown by the brightness of a pixel in the image. Low spatial frequencies are shown in the corners of the image and high frequencies are at the centre.</p><pre class="codeinput">ft = fft2(fftim);
+figure; imshow(abs(ft).^0.3, []);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_23.png" alt=""> <h2>Reconstruct the image<a name="12"></a></h2><p>We carry out a partial reconstruction of the image from the low spatial frequencies only, building it up from the patterns shown above.</p><p>This is done by performing the reverse FFT with only low frequencies included. It could also be done in the same way as the 1-D example, by explicitly computing the components and adding them in to the reconstruction.</p><p>As more spatial frequencies are added, the image becomes a closer approximation to the original.</p><pre class="codeinput">figure;
+
+<span class="keyword">for</span> i = 1:imsz
+    <span class="keyword">for</span> j = 1:imsz
+        y = zeros(size(ft));
+        <span class="comment">% Include only the low frequency components up to the current</span>
+        <span class="comment">% position, maintaining the symmetry.</span>
+        y(1:i, 1:j) = ft(1:i, 1:j);
+        y(1:i, end+2-j:end) = ft(1:i, end+2-j:end);
+        y(end+2-i:end, 1:j) = ft(end+2-i:end, 1:j);
+        y(end+2-i:end, end+2-j:end) = ft(end+2-i:end, end+2-j:end);
+        f = ifft2(y);
+        subplot(imsz, imsz, (i-1)*imsz+j);
+        imshow(f, range);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="fft_image_demo_24.png" alt=""> <h2>Filter the image<a name="13"></a></h2><p>As for the 1-D profile, we can filter the image by weighting the transform to de-emphasise some of the spatial frequencies. In principle this is quite simple, but there is some complexity due to the need to maintain the symmetries.</p><p>Again, we do low, middle and high frequency filtering using a Gaussian mask in frequency space.</p><pre class="codeinput">figure;
+
+<span class="comment">% Low frequency mask</span>
+[M, N] = size(ft);
+mask = zeros(M, N);
+[fy, fx] = ndgrid(0:M/2, 0:N/2);
+sigmaf = 10;
+<span class="comment">% Gaussian mask centred on zero frequency</span>
+mask(1:M/2+1, 1:N/2+1) = exp(-(fx.^2+fy.^2)/(2*sigmaf)^2);
+<span class="comment">% Do symmetries</span>
+mask(1:M/2+1, N:-1:N/2+2) = mask(1:M/2+1, 2:N/2);
+mask(M:-1:M/2+2, :) = mask(2:M/2, :);
+subplot(1,2,1); imshow(mask); title(<span class="string">'Low-pass mask'</span>);
+<span class="comment">% Filter the FT and show the result</span>
+imfilt = ifft2(mask .* ft);
+subplot(1,2,2); imshow(imfilt, []); title(<span class="string">'Low-pass filtered image'</span>);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_25.png" alt=""> <p>Middle frequency mask</p><pre class="codeinput">cfreq = min(M, N)/4;
+<span class="comment">% Gaussian mask centred on cfreq</span>
+mask(1:M/2+1, 1:N/2+1) = exp(-((fx-cfreq).^2+(fy-cfreq).^2)/(2*sigmaf)^2);
+mask(1:M/2+1, N:-1:N/2+2) = mask(1:M/2+1, 2:N/2);
+mask(M:-1:M/2+2, :) = mask(2:M/2, :);
+subplot(1,2,1); subplot(1,2,1); imshow(mask); title(<span class="string">'Middle-pass mask'</span>);
+<span class="comment">% Filter the FT and show the result</span>
+imfilt = ifft2(mask .* ft);
+subplot(1,2,2); imshow(imfilt, []); title(<span class="string">'Middle-pass filtered image'</span>);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_26.png" alt=""> <p>High frequency mask</p><pre class="codeinput">cfreq = min(M, N)/2;
+<span class="comment">% Gaussian mask centred on cfreq</span>
+mask(1:M/2+1, 1:N/2+1) = exp(-((fx-cfreq).^2+(fy-cfreq).^2)/(2*sigmaf)^2);
+mask(1:M/2+1, N:-1:N/2+2) = mask(1:M/2+1, 2:N/2);
+mask(M:-1:M/2+2, :) = mask(2:M/2, :);
+subplot(1,2,1); imshow(mask); title(<span class="string">'High-pass mask'</span>);
+<span class="comment">% Filter the FT and show the result</span>
+imfilt = ifft2(mask .* ft);
+subplot(1,2,2); imshow(imfilt, []); title(<span class="string">'High-pass filtered image'</span>);
+</pre><img vspace="5" hspace="5" src="fft_image_demo_27.png" alt=""> <h2>Experimenting yourself<a name="16"></a></h2><p>You can experiment with this demonstration yourself, by downloading this html document and using Matlab's <tt>grabcode</tt> function to extract the original M-file. You can then edit it to change the parameters or to try different images.</p><p>This document may be accessible from outside Sussex University, but to use functions from the local library you need to be a student or member of staff of the University.</p><p>Copyright University of Sussex, 2009</p><p class="footer"><br>
+      Published with MATLAB&reg; 7.9<br></p></div><!--
+##### SOURCE BEGIN #####
+%% Fourier Transform Demonstration
+%
+% David Young
+%
+% A demonstration of the Discrete Fourier transform applied to 1-D and 2-D
+% data.
+
+%% Read in an image and display it
+% The Sussex vision library must be in the Matlab path - see intro_demo.
+
+% Read an image, truncate it to dimensions that are fast for the FFT, and
+% zero-mean it in order to avoid a big peak in one corner of the FFT array.
+fftim = teachimage('chess1.bmp');
+fftim = fftim(1:2:384, 1:2:512);
+fftim = fftim - mean(mean(fftim));
+% Get its range so that display can be consistent.
+range = [min(fftim(:)) max(fftim(:))];
+f1 = figure; imshow(fftim, range);
+
+%% Get a 1-D profile
+% Extract one row from the middle of the image to use to illustrate 1-D
+% operations.
+
+row = round(size(fftim,1)/2);
+% Show the selected row
+figure(f1); hold on; plot([1 size(fftim,2)], [row row], 'r-'); hold off
+% Extract the row
+x = fftim(row, :);
+% Display the grey-level profile
+figure; plot(x); title('Grey-level profile');
+
+%% Fourier components of 1-D data
+% Compute the transform of the profile and display the spectrum.
+%
+% The spectrum is symmetric about its mid-point because the data are real.
+% Thus low spatial frequencies are at the ends, and high frequencies in the
+% middle. 
+
+X = fft(x);
+figure; plot(abs(X)); title('Amplitudes as a function of frequency');
+
+%% Display individual Fourier components
+% ... together with a reconstruction that includes components at
+% the current and lower spatial frequencies.
+%
+% We used |fft| to get the amplitudes of the components. Normally to
+% reconstruct we would use |ifft|, but here we compute the individual
+% components explicitly so that we can look at them, and we add them up
+% explicitly to gradually reconstruct the original profile. 
+%
+% At the end of the loop, the reconstructed result is the same as the
+% original profile, but on the way we see reconstructions with high
+% frequencies missing.
+
+figure;
+mn = min(x); mx = max(x);
+
+% Initialise. The starting point for the reconstruction is the
+% "zero-frequency" or constant component held in X(1).
+N = length(x);
+reconstruction = X(1)/N;
+p = 2*pi*(0:N-1)/N;
+
+for k = 1:N/2
+    %%
+    
+    % Compute the component for the frequency that gives k cycles in the
+    % width of the image. 
+    a = X(k+1);
+    phi = k*p;
+    % We take advantage of the symmetry that results from x being real to
+    % ignore the top half of X. We therefore need to double the
+    % intermediate components.
+    if k < N/2; s = 2; else s = 1; end
+    component = s*(real(a)*cos(phi) - imag(a)*sin(phi))/N;
+    
+    % and add the component to the reconstruction so far
+    reconstruction = reconstruction + component;
+    
+    % Plot the results, but not for every iteration
+    if ismember(k, [1:7 8:16:63 64:32:N/2])
+        subplot(2,1,1);
+        plot(component);
+        axis([1 length(x) mn mx]);
+        title(['Spatial frequency ' num2str(k) ' cycles across the image']);
+        subplot(2,1,2);
+        plot(reconstruction);
+        axis([1 length(x) mn mx]);
+        title('Reconstruction so far');
+        pause;
+    end    
+end
+
+%% Filtering the profile
+% We can apply filters by multiplying the transform by a set of weights and
+% then transforming back. This is equivalent to convolving the original
+% profile with a mask that is the transform of the set of weights.
+%
+% For example, we pick out low frequencies, middle frequencies and
+% high frequencies with three band-pass Gaussian masks. We have to make sure
+% the symmetries are maintained in the masks.
+
+figure;
+
+% A low-frequency mask, centred on zero-frequency
+mask = zeros(1, N);
+f = 0:N/2;
+sigmaf = 10;
+mask(1:N/2+1) = exp(-(f/(2*sigmaf)).^2);
+mask(N:-1:N/2+2) = mask(2:N/2);
+subplot(3,1,1); plot(mask); title('Low-pass mask');
+
+% Multiply the FT by the mask
+Xfilt = X .* mask;
+subplot(3,1,2); plot(abs(Xfilt)); title('Weighted transform');
+
+% Transform back
+xfilt = ifft(Xfilt);
+subplot(3,1,3); plot(xfilt); title('Low-pass filtered signal');
+
+%%
+% Shift the mask to make a mid-frequency mask
+cfreq = N/4; % Centre frequency in cycles/width of image
+mask(1:N/2+1) = exp(-((f-cfreq)/(2*sigmaf)).^2);
+mask(N:-1:N/2+2) = mask(2:N/2);
+subplot(3,1,1); plot(mask); title('Mid-pass mask');
+Xfilt = X .* mask;
+subplot(3,1,2); plot(abs(Xfilt)); title('Weighted transform');
+xfilt = ifft(Xfilt);
+subplot(3,1,3); plot(xfilt); title('Mid-pass filtered signal');
+
+%%
+% and to make a high-frequency mask
+cfreq = N/2; % Centre frequency in cycles/width of image
+mask(1:N/2+1) = exp(-((f-cfreq)/(2*sigmaf)).^2);
+mask(N:-1:N/2+2) = mask(2:N/2);
+subplot(3,1,1); plot(mask); title('High-pass mask');
+Xfilt = X .* mask;
+subplot(3,1,2); plot(abs(Xfilt)); title('Weighted transform');
+xfilt = ifft(Xfilt);
+subplot(3,1,3); plot(xfilt); title('High-pass filtered signal');
+
+%% Display 2-D Fourier patterns
+% Compute and display the 2-D patterns that are the equivalent of the sine
+% wave components in 1-D. The FT of an image involves breaking it down into
+% these plaid patterns.
+%
+% This displays only the low-frequency patterns. We generate them by
+% applying the inverse 2-D FT to a "delta-function" spectrum - that is, a
+% spectrum which is non-zero at only one point. (They could also be
+% computed by calls to sin and cos.)
+
+figure;
+
+s = 256;
+imsz = 5;
+for i = 1:imsz
+    for j = 1:imsz
+        subplot(imsz, imsz, (i-1)*imsz+j);
+        y = zeros(s);
+        y(i, j) = 1;   % Set one frequence non-zero.
+        
+        % As with the 1-D transform, we need to make this symmetrical to
+        % ensure the result is real
+        if i > 1; y(end+2-i, j) = 1; end
+        if j > 1; y(i, end+2-j) = 1; end
+        if i > 1 && j > 1; y(end+2-i, end+2-j) = 1; end
+        
+        f = ifft2(y);
+        imshow(f, []);
+    end
+end
+
+%% Compute 2-D FFT of image
+% ... and display its spectrum. We use some gamma correction to make it
+% more visible. Note that it has a rotational symmetry.
+%
+% The amplitude of each component is shown by the brightness of a pixel in
+% the image. Low spatial frequencies are shown in the corners of the image
+% and high frequencies are at the centre.
+
+ft = fft2(fftim);
+figure; imshow(abs(ft).^0.3, []);
+
+%% Reconstruct the image
+% We carry out a partial reconstruction of the image from the low spatial
+% frequencies only, building it up from the patterns shown above.
+%
+% This is done by performing the reverse FFT with only low frequencies
+% included. It could also be done in the same way as the 1-D example, by
+% explicitly computing the components and adding them in to the
+% reconstruction.
+%
+% As more spatial frequencies are added, the image becomes a closer
+% approximation to the original.
+
+figure;
+
+for i = 1:imsz
+    for j = 1:imsz
+        y = zeros(size(ft));
+        % Include only the low frequency components up to the current
+        % position, maintaining the symmetry.
+        y(1:i, 1:j) = ft(1:i, 1:j);
+        y(1:i, end+2-j:end) = ft(1:i, end+2-j:end);
+        y(end+2-i:end, 1:j) = ft(end+2-i:end, 1:j);
+        y(end+2-i:end, end+2-j:end) = ft(end+2-i:end, end+2-j:end);
+        f = ifft2(y);
+        subplot(imsz, imsz, (i-1)*imsz+j);
+        imshow(f, range);
+    end
+end
+
+%% Filter the image
+% As for the 1-D profile, we can filter the image by weighting the
+% transform to de-emphasise some of the spatial frequencies. In principle
+% this is quite simple, but there is some complexity due to the need to
+% maintain the symmetries.
+%
+% Again, we do low, middle and high frequency filtering using a Gaussian
+% mask in frequency space.
+
+figure;
+
+% Low frequency mask
+[M, N] = size(ft);
+mask = zeros(M, N);
+[fy, fx] = ndgrid(0:M/2, 0:N/2);
+sigmaf = 10;
+% Gaussian mask centred on zero frequency
+mask(1:M/2+1, 1:N/2+1) = exp(-(fx.^2+fy.^2)/(2*sigmaf)^2);
+% Do symmetries
+mask(1:M/2+1, N:-1:N/2+2) = mask(1:M/2+1, 2:N/2);
+mask(M:-1:M/2+2, :) = mask(2:M/2, :);
+subplot(1,2,1); imshow(mask); title('Low-pass mask');
+% Filter the FT and show the result
+imfilt = ifft2(mask .* ft);
+subplot(1,2,2); imshow(imfilt, []); title('Low-pass filtered image');
+
+%%
+% Middle frequency mask
+cfreq = min(M, N)/4;
+% Gaussian mask centred on cfreq
+mask(1:M/2+1, 1:N/2+1) = exp(-((fx-cfreq).^2+(fy-cfreq).^2)/(2*sigmaf)^2);
+mask(1:M/2+1, N:-1:N/2+2) = mask(1:M/2+1, 2:N/2);
+mask(M:-1:M/2+2, :) = mask(2:M/2, :);
+subplot(1,2,1); subplot(1,2,1); imshow(mask); title('Middle-pass mask');
+% Filter the FT and show the result
+imfilt = ifft2(mask .* ft);
+subplot(1,2,2); imshow(imfilt, []); title('Middle-pass filtered image');
+
+%%
+% High frequency mask
+cfreq = min(M, N)/2;
+% Gaussian mask centred on cfreq
+mask(1:M/2+1, 1:N/2+1) = exp(-((fx-cfreq).^2+(fy-cfreq).^2)/(2*sigmaf)^2);
+mask(1:M/2+1, N:-1:N/2+2) = mask(1:M/2+1, 2:N/2);
+mask(M:-1:M/2+2, :) = mask(2:M/2, :);
+subplot(1,2,1); imshow(mask); title('High-pass mask');
+% Filter the FT and show the result
+imfilt = ifft2(mask .* ft);
+subplot(1,2,2); imshow(imfilt, []); title('High-pass filtered image');
+
+%% Experimenting yourself
+% You can experiment with this demonstration yourself, by downloading this
+% html document and using Matlab's |grabcode| function to extract the
+% original M-file. You can then edit it to change the
+% parameters or to try different images.
+%
+% This document may be accessible from outside Sussex University, but to
+% use functions from the local library you need to be a student or member
+% of staff of the University.
+%
+% Copyright University of Sussex, 2009
+
+##### SOURCE END #####
+--></body></html>

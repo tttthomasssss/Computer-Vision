@@ -39,6 +39,8 @@ x2 = h.*cos(deg2rad(rotated_theta_val));
 y1 = 0;
 y2 = h.*sin(deg2rad(rotated_theta_val));
 
+[f t] = pol2cart(theta_val, rho_val);
+
 fprintf('x2: %f\n', x2);
 fprintf('y2: %f\n', y2);
 

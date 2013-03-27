@@ -25,6 +25,62 @@ classdef DataFactory<handle
             
             morphed_img = bwmorph(edgemap, operation, n);
         end
+        
+        function dil_grayscale_img = dilate_grayscale_img(obj, image, n, strel_method, strel_param)
+            if nargin < 4
+                strel_method = 'diamond';
+                strel_param = 1;
+            elseif nargin < 5
+                strel_param = 1;
+            end;
+            
+            se = strel(strel_method, strel_param);
+            
+            dil_grayscale_img = image;
+            
+            for i = 1:n
+                dil_grayscale_img = imdilate(dil_grayscale_img, se);
+            end;
+        end
+        
+        function vector_peaks = find_vector_peaks(obj, vector, minpeakdistance, minpeakhight)
+            
+            if nargin < 3
+                minpeakdistance = 1;
+                minpeakheight = 0;
+            elseif nargin < 4
+                minpeakheight = 0;
+            end;
+            
+            [rows cols] = size(vector);
+            
+            % Convert row vector to column vector
+            if rows > cols
+                vector = vector.';
+                [rows cols] = size(vector);
+            end;
+            
+            peaks = zeros(1, cols);
+            
+            for i = 1:cols
+                
+                if vector(1, i) > minpeakheight
+                    min_idx = max(0, i - minpeakdistance);
+                    max_idx = min(cols, i + minpeakdistance);
+                    
+                    j = min_idx;
+                    while j <= max_idx && vector(1, i) >= vector(1, j)
+                        j = j + 1;
+                    end;
+                    
+                    if j > max_idx
+                        peaks(i) = 1;
+                    end;
+                end;
+            end;
+            
+            vector_peaks = find(peaks == 1);
+        end
     end
     
     methods (Access = private)

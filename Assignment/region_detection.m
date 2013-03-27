@@ -2,18 +2,21 @@ close all;
 
 img_left_bw = teachimage('assignment/img_left_gray.bmp');
 img_left_col = teachimage('assignment/img_left_colour.tif');
+img_right_bw = teachimage('assignment/img_right_gray.bmp');
 
 gauss_mask = fspecial('gauss', 11, 2);
 
 %conv_img = convolve2(img_left_bw, gauss_mask, 'valid');
 
 edges_img_left_bw = edge(img_left_bw, 'canny');
+edges_img_right_bw = edge(img_right_bw, 'canny');
 
 dilation_img_left_bw = bwmorph(edges_img_left_bw, 'dilate');
+dilation_img_right_bw = bwmorph(edges_img_right_bw, 'dilate');
 %dilation_img_left_bw = edges_img_left_bw;
 
-figure(11);
-imshow(conv_img);
+%figure(11);
+%imshow(conv_img);
 
 %dilation_img_left_bw = 1 - dilation_img_left_bw;
 
@@ -40,6 +43,8 @@ hold on;
 
 %plot(corners(:,1), corners(:,2), 'r*');
 
+
+% Create bounding boxes
 for i = 1:CC.NumObjects
     [idx idy] = ind2sub(size(dilation_img_left_bw), CC.PixelIdxList{1, i});
 
@@ -53,27 +58,26 @@ for i = 1:CC.NumObjects
 
     figure(1);
     rectangle('Position', [min_row, min_col, width, height], 'LineWidth', 1, 'EdgeColor', 'r');
+    
+    % Now try to match all features with the other image (by using correlation)
+    templ = dilation_img_left_bw(min_col:max_col, min_row:max_row);
+    figure(1212);
+    imshow(templ);
+    
+    templ = flipud(templ);
+    
+    corr_img = convolve2(single(dilation_img_right_bw), single(templ), 'valid');
+    
+    figure(1234);
+    imshow(corr_img, []);
+    
+    %{
+        Doesnt work too well this way, if I use a high threshold in the
+        correlated image (eg. >= .9 of the max value), then in certain
+        cases features can be extracted (even the right ones), however in
+        general the problem is that I still get too many bogus features in
+        the first place.
+    %}
+    disp('Blub');
+    
 end;
-%img2 = 1 - dilation_img_left_bw;
-
-%figure(222);
-%imshow(img2);
-
-%{
-for i = 1:num8
-    [r c] = find(labels8==i);
-
-    min_row = min(r);
-    max_row = max(r);
-    min_col = min(c);
-    max_col = max(c);
-
-    width = max_col - min_col + 1;
-    height = max_row - min_row + 1;
-
-    figure(1);
-    rectangle('Position', [min_row, min_col, width, height], 'LineWidth', 1, 'EdgeColor', 'r');
-end;
-%}
-
-%vislabels(labels8);

@@ -7,8 +7,7 @@ img_left_col = teachimage('assignment/img_left_colour.tif');
 
 edges_img_left_bw = edge(img_left_bw, 'canny');
 
-figure(666);
-imhist(edges_img_left_bw);
+%imhist(edges_img_left_bw);
 
 dilation_img_left_bw = bwmorph(edges_img_left_bw, 'dilate');
 [dil_img_left_bw_height dil_img_left_bw_width] = size(dilation_img_left_bw);

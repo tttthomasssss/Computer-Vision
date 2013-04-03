@@ -2,16 +2,23 @@ classdef SnakeFactory
     %SNAKEFACTORY Summary of this class goes here
     %   Detailed explanation goes here
     methods (Access = public)
-        function obj = SnakeFactory(image, feature_bb, preferred_n_control_points)
+        function obj = SnakeFactory(preferred_n_control_points, alpha, beta)
             
-            if nargin < 3
+            if nargin < 1
                 preferred_n_control_points = Consts.DFLT_NUM_CONTROL_POINTS;
+                alpha = rand;
+                beta = rand;
+            elseif nargin < 2
+                alpha = rand;
+                beta = rand;
             end;
             
             obj.n_control_points = preferred_n_control_points;
-            obj.snake_alpha = rand;
-            obj.snake_beta = rand;
+            obj.snake_alpha = alpha;
+            obj.snake_beta = beta;
             
+            %{
+            % THIS WORKS
             % Init a snake
             [x y] = obj.get_basic_snake_for_feature(feature_bb);
             
@@ -27,9 +34,33 @@ classdef SnakeFactory
             figure(3232);
             imshow(image); hold on;
             plot(b, a, 'Marker', 'o', 'Color', 'g');
+            %}
         end
         
+        function initial_snake_list = init_snakes(obj, bb_matrix)
+            [bb_rows bb_cols] = size(bb_matrix);
+            
+            initial_snake_list = cell(bb_rows, 1);
+            
+            for i = 1:bb_rows
+                [xs ys] = obj.get_basic_snake_for_feature(bb_matrix(i, :));
+                initial_snake_list{i} = [xs ys];
+                disp(initial_snake_list);
+            end;
+            disp(initial_snake_list);
+        end
         
+        function snake_list = init_and_fit_snakes(obj, image, bb_matrix)
+        
+            initial_snake_list = init_snakes(obj, bb_matrix);
+            
+            snake_list = cell(size(initial_snake_list));
+            
+            for i = 1:length(initial_snake_list)
+                snake_list{i} = obj.fit_snake(image, initial_snake_list{i});
+            end;
+            
+        end
     end
     
     properties (GetAccess = public, SetAccess = public)
@@ -65,11 +96,9 @@ classdef SnakeFactory
                     
                 x_new = round(x_extl_force + x_intl_force);
                 
-                fprintf('BEFORE LOOP\n');
-                fprintf('X:[%d]; X_NEW:[%d]\n', x, x_new);
-                fprintf('IN LOOP\n');
-                    
-                while x ~= x_new
+                count = 1;
+                
+                while x ~= x_new && count <= Consts.MAX_ITERATIONS;
                     
                     x = x_new;
                     
@@ -78,10 +107,8 @@ classdef SnakeFactory
                     
                     x_new = round(x_extl_force + x_intl_force);
                     
-                    fprintf('X:[%d]; X_NEW:[%d]\n', x, x_new);
+                    count = count + 1;
                 end;
-                
-                fprintf('####\n');
                 
                 snake(i, 1) = x_new;
                 
@@ -91,11 +118,9 @@ classdef SnakeFactory
                 
                 y_new = round(y_extl_force + y_intl_force);
                 
-                fprintf('BEFORE LOOP\n');
-                fprintf('Y:[%d]; Y_NEW:[%d]\n', y, y_new);
-                fprintf('IN LOOP\n');
+                count = 1;
                 
-                while y ~= y_new
+                while y ~= y_new && count <= Consts.MAX_ITERATIONS;
                     
                     y = y_new;
                     
@@ -104,7 +129,7 @@ classdef SnakeFactory
                 
                     y_new = round(y_extl_force + y_intl_force);
                     
-                    fprintf('Y:[%d]; Y_NEW:[%d]\n', y, y_new);
+                    count = count + 1;
                 end;
                 
                 snake(i, 2) = y_new;
@@ -113,11 +138,6 @@ classdef SnakeFactory
             
             snake(length(init_control_points) + 1, 1) = snake(1, 1);
             snake(length(init_control_points) + 1, 2) = snake(1, 2);
-            
-            disp('INIT CONTROL POINTS');
-            disp(init_control_points);
-            disp('FINAL SNAKE');
-            disp(snake);
             
         end
         

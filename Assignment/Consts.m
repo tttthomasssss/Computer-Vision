@@ -19,9 +19,13 @@ classdef Consts
         DFLT_NUM_CONTROL_POINTS     = 30;
         MIN_SNAKE_SPACING           = 20;
         MAX_SNAKE_SPACING           = 200;
+        MAX_ITERATIONS              = 5000;
         
         % Bounding Box Constants
         MIN_EDGE_LENGTH     = 30;
+        
+        % Correspondence Constants
+        CORRESPONDENCE_BY_CORRELATION   = 1;
     end
     
     methods

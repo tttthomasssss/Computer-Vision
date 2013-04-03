@@ -54,6 +54,22 @@ for i = 1:rows
     rectangle('Position', boxes(i, :), 'LineWidth', 1, 'EdgeColor', 'r');
 end;
 
+sf = SnakeFactory(Consts.DFLT_NUM_CONTROL_POINTS, 1, .01);
+snake_list = sf.init_and_fit_snakes(img, boxes);
+
+figure(3);
+imshow(df.img_left_bw);
+
+for i = 1:length(snake_list)
+    figure(3); hold on;
+    snake = snake_list{i};
+    plot(snake(:, 2), snake(:, 1), 'Marker', 'o', 'Color', 'g');
+end;
+
+c = Corresponder();
+
+c.match_regions(df.img_left_bw, snake_list, df.img_right_bw);
+
 % Get Connected Regions from the dilated map
 %cc = bwconncomp(dil_map);
 

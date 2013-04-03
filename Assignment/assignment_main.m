@@ -1,5 +1,8 @@
 % Assignment Trial Stuff
 
+% TODO: Filter bw image before taking edges (imfilter/filter2)
+% TODO: For the Hough Stuff also check Study Direct (houghpeaks!!!)
+
 % Read Image from File & Carry out morphological operations and edge
 % detection
 img_left_bw = teachimage('assignment/img_left_gray.bmp');

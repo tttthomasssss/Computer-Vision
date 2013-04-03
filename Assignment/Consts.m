@@ -14,6 +14,14 @@ classdef Consts
         IMG_RIGHT_BW    = 2;
         IMG_LEFT_COL    = 3;
         IMG_RIGHT_COL   = 4;
+        
+        % Snake Constants
+        DFLT_NUM_CONTROL_POINTS     = 30;
+        MIN_SNAKE_SPACING           = 20;
+        MAX_SNAKE_SPACING           = 200;
+        
+        % Bounding Box Constants
+        MIN_EDGE_LENGTH     = 30;
     end
     
     methods

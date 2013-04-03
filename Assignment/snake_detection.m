@@ -3,19 +3,66 @@ close all;
 df = DataFactory();
 img = df.img_left_bw;
 % Smooth the threshed image a bit
-%h = fspecial('average', [5 5]);
-%thresh_img = filter2(h, thresh_img);
+h = fspecial('gauss', [5 5]);
+thresh_img = filter2(h, img);
 
-%img = df.dilate_grayscale_img(df.img_left_bw, 2, 'diamond', 3);
+%img = df.dilate_grayscale_img(df.img_left_bw, 1, 'diamond', 3);
+img = imfilter(df.img_left_bw, h);
+img = imfilter(img, h);
+
+thresh_img = thresholding(img, 0.68, .78);
+thresh_img = img + (2 * thresh_img);
+
+figure(7878);
+imshow(thresh_img);
+
+edge_map = edge(df.img_left_bw, 'canny');
+edge_map = bwmorph(edge_map, 'dilate');
+%edge_map = bwmorph(edge_map, 'dilate');
+
+figure(567);
+imshow(edge_map);
 
 figure(1);
 imshow(img);
 
-% Luke, the DARK side is stronger!
+% Luke, the DARK side is stronger! (.15 was the best so far, w/ or w/o erosion)
 dil_map = img < 0.15;
 
-cc = bwconncomp(dil_map);
+figure(666);
+imshow(dil_map);
 
+%thresh_img = img - (2 * dil_map);
+%figure(667);
+%imshow(thresh_img);
+
+%dil_map = bwmorph(dil_map, 'erode');
+%dil_map = bwmorph(dil_map, 'erode');
+%figure(667);
+%imshow(dil_map);
+
+rd = RegionDetector();
+
+boxes = rd.detect_bounding_boxes(dil_map);
+
+[rows cols] = size(boxes);
+figure(2);
+imshow(df.img_left_bw);
+
+for i = 1:rows
+    figure(2);
+    rectangle('Position', boxes(i, :), 'LineWidth', 1, 'EdgeColor', 'r');
+end;
+
+% Get Connected Regions from the dilated map
+%cc = bwconncomp(dil_map);
+
+% Get Connected Regions from the edgemap
+%thresh_img = thresh_img > 0.96;
+%cc = bwconncomp(thresh_img);
+
+% THIS STUFF IS WORKING!!!!!!
+%{
 figure(2);
 imshow(df.img_left_bw);
 
@@ -40,3 +87,4 @@ for i = 1:cc.NumObjects
         sf = SnakeFactory(30, df.img_left_bw, [min_col, min_row, width, height]);
     end;
 end;
+%}

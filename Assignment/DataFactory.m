@@ -87,8 +87,8 @@ classdef DataFactory<handle
         function load_images(obj)
             obj.img_left_bw = teachimage(Consts.PATH_IMG_LEFT_BW);
             obj.img_right_bw = teachimage(Consts.PATH_IMG_RIGHT_BW);
-            obj.img_left_col = teachimage(Consts.PATH_IMG_LEFT_COL);
-            obj.img_right_col = teachimage(Consts.PATH_IMG_RIGHT_COL);
+            obj.img_left_col = imread(Consts.FULL_PATH_IMG_LEFT_COL);
+            obj.img_right_col = imread(Consts.FULL_PATH_IMG_RIGHT_COL);
         end
         
         function img = image_for_enum(obj, enum)

@@ -1,8 +1,22 @@
-classdef SnakeFactory
+classdef SnakeFactory<handle
     %SNAKEFACTORY Summary of this class goes here
     %   Detailed explanation goes here
     methods (Access = public)
         function obj = SnakeFactory(preferred_n_control_points, alpha, beta)
+            
+            %{
+            TODO: Alpha Beta
+            
+            either 
+                use average gray level of whole bounding box
+            or
+                take center of gravity as intrinsic and average the corner
+                points as extrinsic
+            
+            
+            can use poly2mask to create a mask from the snake polygon and
+            then can do correlation
+            %}
             
             if nargin < 1
                 preferred_n_control_points = Consts.DFLT_NUM_CONTROL_POINTS;
@@ -38,6 +52,8 @@ classdef SnakeFactory
         end
         
         function initial_snake_list = init_snakes(obj, bb_matrix)
+            obj.bb_matrix = bb_matrix;
+            
             [bb_rows bb_cols] = size(bb_matrix);
             
             initial_snake_list = cell(bb_rows, 1);
@@ -57,7 +73,9 @@ classdef SnakeFactory
             snake_list = cell(size(initial_snake_list));
             
             for i = 1:length(initial_snake_list)
-                snake_list{i} = obj.fit_snake(image, initial_snake_list{i});
+                %[alpha beta] = obj.smart_weights(image, bb_matrix(i, :));
+                [alpha beta] = obj.entropy_weights(image, bb_matrix(i, :));
+                snake_list{i} = obj.fit_snake(image, initial_snake_list{i}, alpha, beta);
             end;
             
         end
@@ -69,11 +87,12 @@ classdef SnakeFactory
         snake_beta;         % Beta value for snake
         x_snake;            % Vector containing x coordinates of final snake
         y_snake;            % Vector containing y coordinates of final snake
+        bb_matrix;          % Bounding Box Matrix
     end
     
     methods (Access = private)
         
-        function snake = fit_snake(obj, image, init_control_points)
+        function snake = fit_snake(obj, image, init_control_points, alpha, beta)
             
             snake = zeros(size(init_control_points));
             
@@ -91,10 +110,13 @@ classdef SnakeFactory
                 yr = init_control_points(min(i + 1, length(snake)), 2);
                 
                 % Fit x-coord of snake
-                x_extl_force = x + obj.snake_alpha * (((xl + xr) / 2) - x);
-                x_intl_force = obj.snake_beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
-                    
-                x_new = round(x_extl_force + x_intl_force);
+                %x_extl_force = x + obj.snake_alpha * (((xl + xr) / 2) - x);
+                %x_intl_force = obj.snake_beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
+                x_extl_force = x + alpha * (((xl + xr) / 2) - x);
+                x_intl_force = beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols))); 
+                
+                % Prevent the snake point from going out of bounds
+                x_new = min(round(x_extl_force + x_intl_force), img_rows);
                 
                 count = 1;
                 
@@ -102,10 +124,12 @@ classdef SnakeFactory
                     
                     x = x_new;
                     
-                    x_extl_force = x + obj.snake_alpha * (((xl + xr) / 2) - x);
-                    x_intl_force = obj.snake_beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
+                    %x_extl_force = x + obj.snake_alpha * (((xl + xr) / 2) - x);
+                    %x_intl_force = obj.snake_beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
+                    x_extl_force = x + alpha * (((xl + xr) / 2) - x);
+                    x_intl_force = beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
                     
-                    x_new = round(x_extl_force + x_intl_force);
+                    x_new = min(round(x_extl_force + x_intl_force), img_rows);
                     
                     count = count + 1;
                 end;
@@ -113,10 +137,12 @@ classdef SnakeFactory
                 snake(i, 1) = x_new;
                 
                 % Fit y-coord of snake
-                y_extl_force = y + obj.snake_alpha * (((yl + yr) / 2) - y);
-                y_intl_force = obj.snake_alpha * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
+                %y_extl_force = y + obj.snake_alpha * (((yl + yr) / 2) - y);
+                %y_intl_force = obj.snake_alpha * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
+                y_extl_force = y + alpha * (((yl + yr) / 2) - y);
+                y_intl_force = beta * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                 
-                y_new = round(y_extl_force + y_intl_force);
+                y_new = min(round(y_extl_force + y_intl_force), img_cols);
                 
                 count = 1;
                 
@@ -124,10 +150,12 @@ classdef SnakeFactory
                     
                     y = y_new;
                     
-                    y_extl_force = y + obj.snake_alpha * (((yl + yr) / 2) - y);
-                    y_intl_force = obj.snake_alpha * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
-                
-                    y_new = round(y_extl_force + y_intl_force);
+                    %y_extl_force = y + obj.snake_alpha * (((yl + yr) / 2) - y);
+                    %y_intl_force = obj.snake_alpha * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
+                    y_extl_force = y + alpha * (((yl + yr) / 2) - y);
+                    y_intl_force = beta * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
+                    
+                    y_new = min(round(y_extl_force + y_intl_force), img_cols);
                     
                     count = count + 1;
                 end;
@@ -226,9 +254,11 @@ classdef SnakeFactory
                 curr_row_pos = curr_row_pos - spacing;
             end;
             
-            % Dirty Quickhack 1: In case not all points fit, the last point
+            % Quickhack 1: In case not all points fit, the last point
             % will be at the origin. If that is the case, just replace the
             % 0/0 coords with the coords of the first point in the snake
+            % In any other case add a last point to the snake which
+            % essentially is the first point
             if xs(length(xs), 1) == 0 && ys(length(ys), 1) == 0
                 xs(length(xs), 1) = xs(1, 1);
                 ys(length(ys), 1) = ys(1, 1);
@@ -237,7 +267,7 @@ classdef SnakeFactory
                 ys(length(ys) + 1, 1) = ys(1, 1);
             end;
             
-            % Dirty Quickhack 2: Get rid of unused control points inbetween
+            % Quickhack 2: Get rid of unused control points inbetween
             x_unused = ind2sub(size(xs), find(xs == 0));
             y_unused = ind2sub(size(ys), find(ys == 0));
             
@@ -266,7 +296,7 @@ classdef SnakeFactory
             creeping_death = 1;
             
             % If spacing not within range, halve or double the amount of
-            % control points
+            % control points until it fits
             while spacing < Consts.MIN_SNAKE_SPACING || spacing > Consts.MAX_SNAKE_SPACING
                 
                 control_points = ternary_conditional(spacing < Consts.MIN_SNAKE_SPACING, round(control_points / creeping_death), control_points * creeping_death);
@@ -278,6 +308,55 @@ classdef SnakeFactory
                 
             end;
             
+        end;
+        
+        function [alpha beta] = smart_weights(obj, curr_img, curr_bounding_box)
+            
+            min_col = curr_bounding_box(1, 1);
+            min_row = curr_bounding_box(1, 2);
+            max_col = min_col + curr_bounding_box(1, 3);
+            max_row = min_row + curr_bounding_box(1, 4);
+            
+            bb_img = curr_img(min_row:max_row, min_col:max_col);
+            
+            % Get Mean Gray Level of Image
+            mean_gray_level = mean(bb_img(:));
+            
+            % Get Gray Level of central point in image
+            center_col = min_col + round(curr_bounding_box(1, 3) ./ 2);
+            center_row = min_row + round(curr_bounding_box(1, 4) ./ 2);
+            
+            center_gray_level = curr_img(center_row, center_col);
+            
+            % Get Gray Level of cornerpoints
+            corner_gray_levels = zeros(1, 4);
+            corner_gray_levels(1, 1) = bb_img(1, 1);
+            corner_gray_levels(1, 2) = bb_img(1, end);
+            corner_gray_levels(1, 3) = bb_img(end, 1);
+            corner_gray_levels(1, 4) = bb_img(end, end);
+            
+            fprintf('OVERALL MEAN GRAY LEVEL: %f\n', mean_gray_level);
+            fprintf('CENTER GRAY LEVEL: %f\n', center_gray_level);
+            fprintf('CORNER GRAY LEVELS: ');
+            disp(corner_gray_levels);
+            
+            beta =  1 ./ abs(mean(corner_gray_levels) - center_gray_level);
+            alpha = 1 ./ beta;
+        end;
+        
+        function [alpha beta] = entropy_weights(obj, curr_img, curr_bounding_box)
+            min_col = curr_bounding_box(1, 1);
+            min_row = curr_bounding_box(1, 2);
+            max_col = min_col + curr_bounding_box(1, 3);
+            max_row = min_row + curr_bounding_box(1, 4);
+            
+            bb_img = curr_img(min_row:max_row, min_col:max_col);
+            
+            e = entropy(bb_img);
+            
+            disp(e);
+            beta = e;
+            alpha = 1 / e;
         end;
     end
     

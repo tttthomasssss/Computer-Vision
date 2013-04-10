@@ -8,6 +8,8 @@ classdef Consts
         PATH_IMG_RIGHT_BW   = 'assignment/img_right_gray.bmp';
         PATH_IMG_LEFT_COL   = 'assignment/img_left_colour.tif';
         PATH_IMG_RIGHT_COL  = 'assignment/img_right_colour.tif';
+        FULL_PATH_IMG_LEFT_COL  = '/Users/thomas/DevSandbox/TheUniSandbox/Computer Vision/resources/images/assignment/img_left_colour.tif';
+        FULL_PATH_IMG_RIGHT_COL = '/Users/thomas/DevSandbox/TheUniSandbox/Computer Vision/resources/images/assignment/img_right_colour.tif';
         
         % Enum Constants
         IMG_LEFT_BW     = 1;
@@ -20,12 +22,20 @@ classdef Consts
         MIN_SNAKE_SPACING           = 20;
         MAX_SNAKE_SPACING           = 200;
         MAX_ITERATIONS              = 5000;
+        MIN_SNAKE_AREA              = 1200;
+        MAX_SNAKE_DIFF_TOLERANCE    = 15000;
         
         % Bounding Box Constants
         MIN_EDGE_LENGTH     = 30;
+        MIN_BOX_AREA        = 1200;
+        MAX_BOX_AREA_PROP   = 0.15;
         
         % Correspondence Constants
         CORRESPONDENCE_BY_CORRELATION   = 1;
+        
+        % Disparity Constants
+        MAX_VERTICAL_DISPARITY      = 50;
+        MAX_HORIZONTAL_DISPARITY    = 100;
     end
     
     methods

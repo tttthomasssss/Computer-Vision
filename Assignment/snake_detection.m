@@ -188,7 +188,7 @@ for i = 1:length(snake_data_list_right)
                 matched_diffs(matched_index, 1) = min_diff;
                 
                 % TODO: When a better match is found, make sure to kick out
-                % the old one
+                % the old one, and well, collect matches as well :)
                 
                 fprintf('MIN DIFF FOUND: %f\n', min_diff);
                 %figure((10 + i)); imshow(df.img_left_bw); hold on;

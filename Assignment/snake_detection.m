@@ -107,6 +107,10 @@ for i = 1:length(snake_list)
     snake = snake_list{i};
     plot(snake(:, 2), snake(:, 1), 'Marker', 'o', 'Color', 'g');
     
+    % Try finding the center of gravity
+    [geom iner cpmo] = polygeom(snake(:, 2), snake(:, 1));
+    plot(geom(2), geom(3), 'Marker', '.', 'Color', 'blue');
+    
     snake_data_list{i} = RegionCorrData(snake, boxes(i, :)); 
 end;
 
@@ -192,6 +196,8 @@ for i = 1:length(snake_data_list_right)
                 
                 % TODO: When a better match is found, make sure to kick out
                 % the old one, and well, collect matches as well :)
+                % Also, see polygeom code above and return the center of
+                % gravity of the snakes
                 
                 fprintf('MIN DIFF FOUND: %f\n', min_diff);
                 %figure((10 + i)); imshow(df.img_left_bw); hold on;

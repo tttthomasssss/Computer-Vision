@@ -1,23 +1,22 @@
-classdef CorrespondenceData<handle
-    %CORRESPONDENCEDATA Summary of this class goes here
+classdef RegionCorrData<handle
+    %REGIONCORRDATA Summary of this class goes here
     %   Detailed explanation goes here
     
     methods(Access = public)
-        function obj = CorrespondenceData(snake, bb)
+        function obj = RegionCorrData(snake, bb)
             obj.collect_data(snake, bb)
         end;
     end
     
     properties (GetAccess = public, SetAccess = private)
+        % area based
         snake_area;
         snake_circumference;
         snake_area_circum_ratio;
         snake_height;
         snake_width;
         bb_mid_point;
-        %snake_avg_gray_level;
-        %snake_max_gray_level;
-        %snake_min_gray_level;
+        
     end
     
     methods (Access = private)

@@ -30,6 +30,9 @@ classdef Consts
         MIN_BOX_AREA        = 1200;
         MAX_BOX_AREA_PROP   = 0.15;
         
+        % Line Constants
+        MIN_LINE_LENGTH     = 150;
+        
         % Correspondence Constants
         CORRESPONDENCE_BY_CORRELATION   = 1;
         

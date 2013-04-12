@@ -107,7 +107,7 @@ for i = 1:length(snake_list)
     snake = snake_list{i};
     plot(snake(:, 2), snake(:, 1), 'Marker', 'o', 'Color', 'g');
     
-    snake_data_list{i} = CorrespondenceData(snake, boxes(i, :)); 
+    snake_data_list{i} = RegionCorrData(snake, boxes(i, :)); 
 end;
 
 for i = 1:length(snake_list_right)
@@ -115,7 +115,7 @@ for i = 1:length(snake_list_right)
     snake_right = snake_list_right{i};
     plot(snake_right(:, 2), snake_right(:, 1), 'Marker', 'o', 'Color', 'g');
     
-    snake_data_list_right{i} = CorrespondenceData(snake_right, boxes_right(i, :));
+    snake_data_list_right{i} = RegionCorrData(snake_right, boxes_right(i, :));
 end;
 
 fprintf('LEFT SNAKES COUNT: %d; RIGHT SNAKES COUNT: %d\n', length(snake_data_list), length(snake_data_list_right));
@@ -144,21 +144,24 @@ for i = 1:length(snake_data_list_right)
         
         for j = 1:length(snake_data_list)
             
-            %temp = snake_list{j};
-            %figure(222); imshow(df.img_left_bw); hold on;
-            %plot(temp(:, 2), temp(:, 1), 'Marker', 'o', 'Color', 'g');
-            
-            
-            
             left_data = snake_data_list{j};
             
             p1 = right_data.bb_mid_point;
             p2 = left_data.bb_mid_point;
             
-            h_diff_norm = abs(p2(1, 1) - p1(1, 1)) ./ Consts.MAX_HORIZONTAL_DISPARITY;
-            v_diff_norm = abs(p2(1, 2) - p1(1, 2)) ./ Consts.MAX_VERTICAL_DISPARITY;
+            v_diff_norm = abs(p2(1, 1) - p1(1, 1)) / Consts.MAX_VERTICAL_DISPARITY;
+            h_diff_norm = abs(p2(1, 2) - p1(1, 2)) / Consts.MAX_HORIZONTAL_DISPARITY;
             
-            weight = ternary_conditional((h_diff_norm + v_diff_norm <= 2), norm([v_diff_norm h_diff_norm]), norm([v_diff_norm h_diff_norm]) .^ 2);
+            if v_diff_norm <= 1 && h_diff_norm <= 1
+                fprintf('### H DIFF NORM: %f\n', h_diff_norm);
+                fprintf('### V DIFF NORM: %f\n', v_diff_norm);
+            end;
+            
+            % TODO: increase the weight by the power of 2 in case either of
+            % the 2 diffs exceeds 1!!!!
+            %weight = ternary_conditional((h_diff_norm + v_diff_norm <= 2), norm([v_diff_norm h_diff_norm]), norm([v_diff_norm h_diff_norm]) .^ 2);
+            %weight = ternary_conditional((h_diff_norm <= 1 && v_diff_norm <= 1), norm([v_diff_norm h_diff_norm]), norm([v_diff_norm h_diff_norm]) .* 5);
+            weight = norm([v_diff_norm h_diff_norm]) * max(h_diff_norm, v_diff_norm);
             
             %weight = 1 ./ norm([abs(p2(1, 1) - p1(1, 1)) abs(p2(1, 2) - p1(1, 2))]);
             

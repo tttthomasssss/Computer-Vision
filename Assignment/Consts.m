@@ -31,7 +31,12 @@ classdef Consts
         MAX_BOX_AREA_PROP   = 0.15;
         
         % Line Constants
-        MIN_LINE_LENGTH     = 150;
+        MIN_LINE_LENGTH         = 150;
+        LINE_LENGTH_TOLERANCE   = 0.7;
+        MAX_LINE_DIFF_TOLERANCE = 3000;
+        
+        % Corner Constants
+        CORNER_FRAME_SIZE   = 30;
         
         % Correspondence Constants
         CORRESPONDENCE_BY_CORRELATION   = 1;

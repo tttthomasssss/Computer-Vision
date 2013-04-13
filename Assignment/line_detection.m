@@ -7,15 +7,15 @@ df = DataFactory();
 
 % Morph Image
 h = fspecial('gauss', [5 5]);
-img = imfilter(df.img_left_bw, h);
-for i = 1:20
-    img = imfilter(img, h);
+img = imfilter(df.img_left_bw, h, 'replicate');
+for i = 1:130
+    img = imfilter(img, h, 'replicate');
 end;
 
 % Morph Right Image
 img_right = imfilter(df.img_right_bw, h);
-for i = 1:20
-    img_right = imfilter(img_right, h);
+for i = 1:130
+    img_right = imfilter(img_right, h, 'replicate');
 end;
 
 % Show Images
@@ -54,13 +54,13 @@ colormap(hot);
 [r_r c_r v_r] = find(H > max(H(:)) * 0.3);
 
 % Find Houghpeaks
-peaks = houghpeaks(H, length(r), 'threshold', max(H(:)) * 0.3);
+peaks = houghpeaks(H, length(r), 'threshold', max(H(:)) * 0.5);
 
 x = theta(peaks(:, 2));
 y = rho(peaks(:, 1));
 plot(x, y, 's', 'color', 'black');
 
-peaks_right = houghpeaks(H_right, length(r_r), 'threshold', max(H(:)) * 0.3);
+peaks_right = houghpeaks(H_right, length(r_r), 'threshold', max(H(:)) * 0.5);
 x_right = theta_right(peaks_right(:, 2));
 y_right = rho_right(peaks_right(:, 1));
 plot(x_right, y_right, 's', 'color', 'black');
@@ -120,6 +120,7 @@ end;
 
 % MATCH LINES HERE 
 match_count = 0;
+matched_diffs = zeros(length(line_data_list), 1);
 
 for i = 1:length(line_data_list_right)
 
@@ -133,7 +134,8 @@ for i = 1:length(line_data_list_right)
         
         match_count = match_count + 1;
         
-        if match_count == 19 || match_count == 29
+        if match_count == 10 || match_count == 13% || match_count == 6 || match_count == 10 || match_count == 11 || match_count == 13 || match_count == 18 || match_count == 17 || match_count == 28 || match_count == 30
+        %    fprintf('MATCH COUNT: %d\n', match_count)
             disp('stuff');
         end;
         
@@ -141,27 +143,122 @@ for i = 1:length(line_data_list_right)
         for j = 1:length(line_data_list)
             left_data = line_data_list{j};
             
-            p1 = left_data.mid_point;
-            p2 = right_data.mid_point;
-            
-            h_diff_norm = abs(p2(1, 1) - p1(1, 1)) / Consts.MAX_HORIZONTAL_DISPARITY;
-            v_diff_norm = abs(p2(1, 2) - p1(1, 2)) / Consts.MAX_VERTICAL_DISPARITY;
-            
-            weight = norm([h_diff_norm v_diff_norm]) * max(h_diff_norm, v_diff_norm);
+            % Read data points, they are cartesian, so x = matlab cols; y =
+            % matlab rows
+            x1 = left_data.start_point(1, 1);
+            y1 = left_data.start_point(1, 2);
+            x2 = left_data.end_point(1, 1);
+            y2 = left_data.end_point(1, 2);
+            x3 = right_data.start_point(1, 1);
+            y3 = right_data.start_point(1, 2);
+            x4 = right_data.end_point(1, 1);
+            y4 = right_data.end_point(1, 2);
             
             diff = double(0);
             
+            % Length weight
+            factor = (min(left_data.length, right_data.length) < max(left_data.length, right_data.length) * Consts.LINE_LENGTH_TOLERANCE);
+            length_weight = max(((left_data.length - right_data.length) .^ 2) * factor, 1);
+            
+            % Angular disparity between the 2 detected lines
+            angular_weight = abs(atand((y2 - y1) / (x2 - x1)) - atand((y4 - y3) / (x4 - x3)));
+            
+            % Rho weight, given Theta, estimate a rho value for the
+            % matching object in image 2 and related the actual rho value
+            % with the estimated one
+            %opposite_left = left_data.rho * sind(left_data.theta) + Consts.MAX_HORIZONTAL_DISPARITY;
+            %adjacent_left = left_data.rho * cosd(left_data.theta) + Consts.MAX_VERTICAL_DISPARITY;
+            
+            %estimated_rho_right = norm([opposite_left adjacent_left]);
+            
+            %rho_weight = max(estimated_rho_right, right_data.rho) / min(estimated_rho_right / right_data.rho) * angular_weight;
+            %rho_weight = mean([norm(left_data.start_point - right_data.start_point) norm(left_data.mid_point - right_data.mid_point) norm(left_data.end_point- right_data.end_point)]);
+            
+            % Gray Level difference
+            left_line_patch = df.img_left_bw(left_data.start_point(1, 2):left_data.end_point(1, 2), left_data.start_point(1, 1):left_data.end_point(1, 1));
+            right_line_patch = df.img_right_bw(right_data.start_point(1, 2):right_data.end_point(1, 2), right_data.start_point(1, 1):right_data.end_point(1, 1));
+            
+            left_avg_gray = mean(left_line_patch(:));
+            right_avg_gray = mean(right_line_patch(:));
+            
+            diff = diff + ((left_avg_gray - right_avg_gray) .^ 2);
+            
+            % Spatial weights = the angle between the 2 corresponding points
+            start_spatial_weight = abs(acosd(dot(left_data.start_point, right_data.start_point) / (norm(left_data.start_point) * norm(right_data.start_point))));
+            mid_spatial_weight = abs(acosd(dot(left_data.mid_point, right_data.mid_point) / (norm(left_data.mid_point) * norm(right_data.mid_point))));
+            end_spatial_weight = abs(acosd(dot(left_data.end_point, right_data.end_point) / (norm(left_data.end_point) * norm(right_data.end_point))));
+            
+            % Diff Theta
+            diff = diff + angular_weight * ((cosd(left_data.theta) - cosd(right_data.theta)) .^ 2);
+            
+            % Diff length
+            diff = diff + length_weight * (max(left_data.length, right_data.length) / min(left_data.length, right_data.length));
+            
+            % Diff Points
+            diff = diff + norm(left_data.start_point - right_data.start_point) * start_spatial_weight;
+            diff = diff + norm(left_data.mid_point - right_data.mid_point) * mid_spatial_weight;
+            diff = diff + norm(left_data.end_point- right_data.end_point) * end_spatial_weight;
+            %diff = diff + ((x1 + Consts.MAX_VERTICAL_DISPARITY - x3) .^ 2) * spatial_weight;
+            %diff = diff + ((y1 + Consts.MAX_HORIZONTAL_DISPARITY - y3) .^ 2) * spatial_weight;
+            %diff = diff + ((x2 + Consts.MAX_VERTICAL_DISPARITY - x4) .^ 2) * spatial_weight;
+            %diff = diff + ((y2 + Consts.MAX_HORIZONTAL_DISPARITY - y4) .^ 2) * spatial_weight;
+            
+            % Diff Rho
+            %diff = diff + ((left_data.rho - (right_data.rho + rho_weight)) .^ 2) * angular_weight;
+            
+            
+            %{
+            p1 = left_data.mid_point;
+            p2 = right_data.mid_point;
+            
+            h_diff_norm = (abs(p2(1, 1) - p1(1, 1)) + Consts.MAX_HORIZONTAL_DISPARITY) / Consts.MAX_HORIZONTAL_DISPARITY;
+            v_diff_norm = (abs(p2(1, 2) - p1(1, 2)) + Consts.MAX_VERTICAL_DISPARITY) / Consts.MAX_VERTICAL_DISPARITY;
+            
+            weight = norm([h_diff_norm v_diff_norm]) * max(h_diff_norm, v_diff_norm);
+            
+            % Calc Rho weight as the angle between the 2 lines
+            x1 = left_data.start_point(1, 2);
+            y1 = left_data.start_point(1, 1);
+            x2 = left_data.end_point(1, 2);
+            y2 = left_data.end_point(1, 1);
+            x3 = right_data.start_point(1, 2);
+            y3 = right_data.start_point(1, 1);
+            x4 = right_data.end_point(1, 2);
+            y4 = right_data.end_point(1, 1);
+            rho_weight = abs(atand((y2 - y1) / (x2 - x1)) - atand((y4 - y3) / (x4 - x3)));
+            
+            % Spatial weights
+            % Adjust spatial weights due to general orientation of line (horizontal vs. vertical)
+            % eg. weight for horizontal displacement higher if line is
+            % vertical
+            
+            v_weight = abs(cosd(right_data.theta + 90));
+            h_weight = abs(sind(right_data.theta + 90));
+            
+            diff = double(0);
+            
+            % TODO: MORE ADJUSTING OF WEIGHTS
             diff = diff + weight * ((cosd(left_data.theta) - cosd(right_data.theta)) .^ 2);
-            diff = diff + weight * ((left_data.rho - right_data.rho) .^ 2);
-            diff = diff + (2 * (max(left_data.length, right_data.length) * 0.65 > min(left_data.length, right_data.length))) * ((left_data.length - right_data.length) .^ 2);
-            diff = diff + (1 / Consts.MAX_HORIZONTAL_DISPARITY) * ((left_data.start_point(1, 1) - right_data.start_point(1, 1)) .^ 2);% * (abs(left_data.start_point(1, 1) - right_data.start_point(1, 1)) / Consts.MAX_HORIZONTAL_DISPARITY);
-            diff = diff + (1 / Consts.MAX_VERTICAL_DISPARITY) * ((left_data.start_point(1, 2) - right_data.start_point(1, 2)) .^ 2);% * (abs(left_data.start_point(1, 2) - right_data.start_point(1, 2)) / Consts.MAX_VERTICAL_DISPARITY);
-            diff = diff + (1 / Consts.MAX_HORIZONTAL_DISPARITY) * ((left_data.end_point(1, 1) - right_data.end_point(1, 1)) .^ 2);% * (abs(left_data.end_point(1, 1) - right_data.end_point(1, 1)) / Consts.MAX_HORIZONTAL_DISPARITY);
-            diff = diff + (1 / Consts.MAX_VERTICAL_DISPARITY) * ((left_data.end_point(1, 2) - right_data.end_point(1, 2)) .^ 2);% * (abs(left_data.end_point(1, 2) - right_data.end_point(1, 2)) / Consts.MAX_VERTICAL_DISPARITY);
+            diff = diff + weight * ((left_data.rho - right_data.rho) .^ 2) * rho_weight;
+            diff = diff + ((max(left_data.length, right_data.length) * Consts.LINE_LENGTH_TOLERANCE - min(left_data.length, right_data.length)) .^ 2) * weight;
+            diff = diff + h_weight * (1 / Consts.MAX_HORIZONTAL_DISPARITY) * (Consts.MAX_HORIZONTAL_DISPARITY + (left_data.start_point(1, 1) - right_data.start_point(1, 1)) .^ 2);% * (abs(left_data.start_point(1, 1) - right_data.start_point(1, 1)) / Consts.MAX_HORIZONTAL_DISPARITY);
+            diff = diff + v_weight * (1 / Consts.MAX_VERTICAL_DISPARITY) * (Consts.MAX_VERTICAL_DISPARITY + (left_data.start_point(1, 2) - right_data.start_point(1, 2)) .^ 2);% * (abs(left_data.start_point(1, 2) - right_data.start_point(1, 2)) / Consts.MAX_VERTICAL_DISPARITY);
+            diff = diff + h_weight * (1 / Consts.MAX_HORIZONTAL_DISPARITY) * (Consts.MAX_HORIZONTAL_DISPARITY + (left_data.end_point(1, 1) - right_data.end_point(1, 1)) .^ 2);% * (abs(left_data.end_point(1, 1) - right_data.end_point(1, 1)) / Consts.MAX_HORIZONTAL_DISPARITY);
+            diff = diff + v_weight * (1 / Consts.MAX_VERTICAL_DISPARITY) * (Consts.MAX_VERTICAL_DISPARITY + (left_data.end_point(1, 2) - right_data.end_point(1, 2)) .^ 2);% * (abs(left_data.end_point(1, 2) - right_data.end_point(1, 2)) / Consts.MAX_VERTICAL_DISPARITY);
             %diff = diff + (1 / Consts.MAX_HORIZONTAL_DISPARITY) * ((left_data.mid_point(1, 1) - right_data.mid_point(1, 1)) .^ 2);
             %diff = diff + (1 / Consts.MAX_VERTICAL_DISPARITY) * ((left_data.mid_point(1, 2) - right_data.mid_point(1, 2)) .^ 2);
             
             %diff = diff * weight;
+            %}
+            
+            
+            
+            
+            
+            
+            
+            
+            
             
             if (diff < min_diff)
                 min_diff = diff;
@@ -170,13 +267,18 @@ for i = 1:length(line_data_list_right)
             end;
         end;
         
-        fprintf('MIN DIFF SCORE: %f\n', min_diff);
-        
-        figure; subplot(1, 2, 1), imshow(df.img_left_bw); hold on;
-        plot([min_diff_line.start_point(1, 1) min_diff_line.end_point(1, 1)], [min_diff_line.start_point(1, 2) min_diff_line.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
-        
-        subplot(1, 2, 2), imshow(df.img_right_bw); hold on;
-        plot([right_data.start_point(1, 1) right_data.end_point(1, 1)], [right_data.start_point(1, 2) right_data.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+        if (min_diff <= Consts.MAX_LINE_DIFF_TOLERANCE)
+            if (matched_diffs(matched_index, 1) == 0 || matched_diffs(matched_index) > min_diff)
+                matched_diffs(matched_index, 1) = min_diff;
+                fprintf('MATCH COUNT: %d; MIN DIFF SCORE: %f\n', match_count, min_diff);
+                
+                figure(match_count); subplot(1, 2, 1), imshow(df.img_left_bw); hold on;
+                plot([min_diff_line.start_point(1, 1) min_diff_line.end_point(1, 1)], [min_diff_line.start_point(1, 2) min_diff_line.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+                
+                subplot(1, 2, 2), imshow(df.img_right_bw); hold on;
+                plot([right_data.start_point(1, 1) right_data.end_point(1, 1)], [right_data.start_point(1, 2) right_data.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+            end;
+        end;
     end;
 end;
 

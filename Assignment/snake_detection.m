@@ -128,6 +128,10 @@ fprintf('LEFT SNAKES COUNT: %d; RIGHT SNAKES COUNT: %d\n', length(snake_data_lis
 close all;
 % Try to detect duplicates
 matched_diffs = zeros(length(snake_data_list), 1);
+match_count = 0;
+
+% Correspondences
+correspondences = zeros(4, 1);
 
 for i = 1:length(snake_data_list_right)
     %close all;
@@ -194,6 +198,8 @@ for i = 1:length(snake_data_list_right)
             if matched_diffs(matched_index, 1) == 0 || matched_diffs(matched_index, 1) > min_diff
                 matched_diffs(matched_index, 1) = min_diff;
                 
+                match_count = match_count + 1;
+                
                 % TODO: When a better match is found, make sure to kick out
                 % the old one, and well, collect matches as well :)
                 % Also, see polygeom code above and return the center of
@@ -209,6 +215,15 @@ for i = 1:length(snake_data_list_right)
                 %figure((100 + i)); imshow(df.img_right_bw); hold on;
                 subplot(1, 2, 2), imshow(df.img_right_bw); hold on;
                 plot(right_snake(:, 2), right_snake(:, 1), 'Marker', 'o', 'Color', 'g');
+                
+                % Store Correspondences
+                [geom iner cpmo] = polygeom(min_diff_snake(:, 2), min_diff_snake(:, 1));
+                correspondences(1, match_count) = geom(3);
+                correspondences(2, match_count) = geom(2);
+                
+                [geom iner cpmo] = polygeom(right_snake(:, 2), right_snake(:, 1));
+                correspondences(3, match_count) = geom(3);
+                correspondences(4, match_count) = geom(2);
             end;
         else
             disp('No suitable match found');
@@ -219,7 +234,7 @@ for i = 1:length(snake_data_list_right)
     
 end;
 
-
+stereo_display(df.img_left_bw, df.img_right_bw, correspondences);
 
 % Get Connected Regions from the dilated map
 %cc = bwconncomp(dil_map);

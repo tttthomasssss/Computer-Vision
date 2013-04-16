@@ -117,7 +117,7 @@ for k = 1:length(lines_right)
     end;
 end;
 
-
+%{
 % MATCH LINES HERE 
 match_count = 0;
 matched_diffs = zeros(length(line_data_list), 1);
@@ -281,7 +281,15 @@ for i = 1:length(line_data_list_right)
         end;
     end;
 end;
+%}
 
+close all;
+
+corr_factory = CorrespondenceFactory(df.img_right_bw, df.img_left_bw);
+
+correspondences = corr_factory.match_lines(lines_right, lines);
+
+stereo_display(df.img_left_bw, df.img_right_bw, correspondences);
 
 %{ 
 

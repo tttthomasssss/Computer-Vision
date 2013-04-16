@@ -126,6 +126,8 @@ fprintf('LEFT SNAKES COUNT: %d; RIGHT SNAKES COUNT: %d\n', length(snake_data_lis
 
 % Try to find the nearest neighbour from one img to the next
 close all;
+
+%{
 % Try to detect duplicates
 matched_diffs = zeros(length(snake_data_list), 1);
 match_count = 0;
@@ -233,6 +235,10 @@ for i = 1:length(snake_data_list_right)
     end;
     
 end;
+%}
+
+corr_factory = CorrespondenceFactory(df.img_right_bw, df.img_left_bw);
+correspondences = corr_factory.match_snakes(snake_list_right, boxes_right, snake_list, boxes);
 
 stereo_display(df.img_left_bw, df.img_right_bw, correspondences);
 

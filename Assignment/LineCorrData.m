@@ -25,7 +25,11 @@ classdef LineCorrData<handle
             obj.start_point = houghline.point1;
             obj.end_point = houghline.point2;
             obj.length = norm(houghline.point1 - houghline.point2);
-            obj.mid_point = abs(houghline.point2 - houghline.point1) / 2;
+            
+            mid_x = min(houghline.point2(1, 1), houghline.point1(1, 1)) + (abs(houghline.point2(1, 1) - houghline.point1(1, 1)) / 2);
+            mid_y = min(houghline.point2(1, 2), houghline.point1(1, 2)) + (abs(houghline.point2(1, 2) - houghline.point1(1, 2)) / 2);
+            obj.mid_point = [mid_x mid_y];
+            %obj.mid_point = abs(houghline.point2 - houghline.point1) / 2;
         end;
     end;
     

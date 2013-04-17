@@ -14,7 +14,7 @@ classdef CorrespondenceFactory<handle
             right_snake_data_list = obj.get_data_list_from_snake_and_bb_matrix(right_snake_list, right_bb_matrix);
             left_snake_data_list = obj.get_data_list_from_snake_and_bb_matrix(left_snake_list, left_bb_matrix);
             
-            matched_diffs = zeros(length(right_snake_data_list), 1);
+            matched_diffs = zeros(max(length(right_snake_data_list), length(left_snake_data_list)), 1);
             match_count = 0;
             correspondence_matrix = zeros(4, 1);
             
@@ -203,6 +203,88 @@ classdef CorrespondenceFactory<handle
         
             correspondence_matrix = zeros(4, 1);
             
+            % Get the Corner Data
+            right_corner_data_list = obj.get_data_list_from_corner_bbs(right_corner_matrix, obj.right_img_bw);
+            left_corner_data_list = obj.get_data_list_from_corner_bbs(left_corner_matrix, obj.left_img_bw);
+            
+            match_count = 0;
+            matched_diffs = zeros(length(right_corner_data_list), 1);
+            
+            % Match Stuff!!!
+            for i = 1:length(right_corner_data_list)
+                
+                min_diff = Inf('double');
+                min_diff_corner = {};
+                matched_index = 0;
+                
+                right_corner_data = right_corner_data_list{i, 1};
+                
+                % In case the merged box is too large, ignore it
+                if (right_corner_data.bb_width <= 4 * Consts.CORNER_FRAME_SIZE && right_corner_data.bb_height <= 4 * Consts.CORNER_FRAME_SIZE)
+                    
+                    for j = 1:length(left_corner_data_list)
+                        left_corner_data = left_corner_data_list{j, 1};
+                        
+                        if (left_corner_data.bb_width <= 4 * Consts.CORNER_FRAME_SIZE && left_corner_data.bb_height <= 4 * Consts.CORNER_FRAME_SIZE)
+                            
+                            diff = double(0);
+                            
+                            % Calculate Weight (= Normalised Euclidean Distance, sent through a Polynomial)
+                            euclidean_distance = norm(left_corner_data.bb_mid_point - right_corner_data.bb_mid_point);
+                            norm_euclidean_dist = euclidean_distance / norm([Consts.MAX_VERTICAL_DISPARITY Consts.MAX_HORIZONTAL_DISPARITY]);
+                            
+                            % Apply Polynomial to weight (2 * pi * ((norm_euclidean_dist - 1) ^ 2))
+                            % This function describes a steeply rising
+                            % parabola, centered around x = 1, this has the
+                            % effect of symmetrically amplyfing too close
+                            % matches and too far away matches
+                            weight = ceil(2 * pi * ((norm_euclidean_dist - 1) ^ 2));
+                            
+                            diff = diff + (left_corner_data.mid_point_gray_level - right_corner_data.mid_point_gray_level) ^ 2;
+                            diff = diff + (left_corner_data.avg_gray_level_box_corners - right_corner_data.avg_gray_level_box_corners) ^ 2;
+                            diff = diff + (left_corner_data.avg_gray_level_box - right_corner_data.avg_gray_level_box) ^ 2;
+                            diff = diff + (left_corner_data.max_gray_level - right_corner_data.max_gray_level) ^ 2;
+                            diff = diff + (left_corner_data.min_gray_level - right_corner_data.min_gray_level) ^ 2;
+                            
+                            diff = diff * weight;
+                            
+                            if (diff < min_diff)
+                                min_diff = diff;
+                                min_diff_corner = left_corner_data;
+                                matched_index = j;
+                            end;
+                        else
+                            disp('Corner Bounding Box too large!');
+                        end;
+                        
+                        % Check if diff does not exceed threshold
+                        if (min_diff <= Consts.MAX_CORNER_DIFF_TOLERANCE)
+                            
+                            % Check if its a new or a better match
+                            if (matched_diffs(matched_index, 1) == 0 || matched_diffs(matched_index) > min_diff)
+                            
+                                disp('Suitable corner match found!');
+                            
+                                match_count = match_count + 1;
+                                matched_diffs(matched_index, 1) = min_diff;
+                                
+                                correspondence_matrix(1, match_count) = min_diff_corner.bb_mid_point(1, 1);
+                                correspondence_matrix(2, match_count) = min_diff_corner.bb_mid_point(1, 2);
+                                correspondence_matrix(3, match_count) = right_corner_data.bb_mid_point(1, 1);
+                                correspondence_matrix(4, match_count) = right_corner_data.bb_mid_point(1, 2);
+                                
+                            else
+                                disp('No suitable match found!');
+                            end;
+                        else
+                            disp('No suitable match found!');
+                        end;
+                    end;
+                else
+                    disp('Corner Bounding Box too large!');
+                end;
+                
+            end;
         end;
     end;
     
@@ -212,6 +294,14 @@ classdef CorrespondenceFactory<handle
     end
     
     methods (Access = private)
+        
+        function corner_data_list = get_data_list_from_corner_bbs(obj, corner_bbs, img)
+            corner_data_list = cell(length(corner_bbs), 1);
+            
+            for i = 1:length(corner_bbs)
+                corner_data_list{i, 1} = CornerCorrData(corner_bbs(i, :), img);
+            end;
+        end;
         
         function line_data_list = get_data_list_from_hough_lines(obj, hough_lines)
             line_data_list = cell(length(hough_lines), 1);
@@ -226,7 +316,7 @@ classdef CorrespondenceFactory<handle
             snake_data_list = cell(length(snake_list), 1);
             
             for i = 1:length(snake_list)
-                snake_data_list{i, 1} = RegionCorrData(snake_list{i}, bb_matrix(i, :));
+                snake_data_list{i, 1} = SnakeCorrData(snake_list{i}, bb_matrix(i, :));
             end;
         end;
         

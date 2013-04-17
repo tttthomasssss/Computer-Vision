@@ -4,10 +4,12 @@ classdef Consts
     
     properties (Constant = true)
         % Path Constants
-        PATH_IMG_LEFT_BW    = 'assignment/img_left_gray.bmp';
-        PATH_IMG_RIGHT_BW   = 'assignment/img_right_gray.bmp';
-        PATH_IMG_LEFT_COL   = 'assignment/img_left_colour.tif';
-        PATH_IMG_RIGHT_COL  = 'assignment/img_right_colour.tif';
+        PATH_IMG_LEFT_BW        = 'assignment/img_left_gray.bmp';
+        PATH_IMG_RIGHT_BW       = 'assignment/img_right_gray.bmp';
+        PATH_IMG_LEFT_COL       = 'assignment/img_left_colour.tif';
+        PATH_IMG_RIGHT_COL      = 'assignment/img_right_colour.tif';
+        FULL_PATH_IMG_LEFT_BW   = '/Users/thomas/DevSandbox/TheUniSandbox/Computer Vision/resources/images/assignment/img_left_gray.bmp';
+        FULL_PATH_IMG_RIGHT_BW  = '/Users/thomas/DevSandbox/TheUniSandbox/Computer Vision/resources/images/assignment/img_right_gray.bmp';
         FULL_PATH_IMG_LEFT_COL  = '/Users/thomas/DevSandbox/TheUniSandbox/Computer Vision/resources/images/assignment/img_left_colour.tif';
         FULL_PATH_IMG_RIGHT_COL = '/Users/thomas/DevSandbox/TheUniSandbox/Computer Vision/resources/images/assignment/img_right_colour.tif';
         
@@ -36,7 +38,8 @@ classdef Consts
         MAX_LINE_DIFF_TOLERANCE = 3000;
         
         % Corner Constants
-        CORNER_FRAME_SIZE   = 30;
+        CORNER_FRAME_SIZE           = 30;
+        MAX_CORNER_DIFF_TOLERANCE   = 0.15;
         
         % Correspondence Constants
         CORRESPONDENCE_BY_CORRELATION   = 1;

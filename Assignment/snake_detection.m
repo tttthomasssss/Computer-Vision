@@ -20,7 +20,46 @@ img = imfilter(img, h);
 
 img_right = imfilter(df.img_right_bw, h);
 img_right = imfilter(img_right, h);
-dil_map_right = img_right < 0.15;
+
+%% DARK STUFF = GOOD STUFF
+% Luke, the DARK side is stronger! (.15 was the best so far, w/ or w/o erosion)
+%dil_map = img < 0.15;
+%dil_map_right = img_right < 0.15;
+
+%% EDGE STUFF = OK STUFF
+%dil_map = edge(img, 'canny');
+%dil_map = bwmorph(dil_map, 'dilate');
+
+%dil_map_right = edge(img_right, 'canny');
+%dil_map_right = bwmorph(dil_map_right, 'dilate');
+
+%% GAUSS STUFF = NOT BAD AT ALL
+% For Canny edge detector use 50 iterations
+%h = fspecial('gauss', [5 5]);
+%img = imfilter(df.img_left_bw, h, 'replicate');
+%for i = 1:130
+%    img = imfilter(img, h, 'replicate');
+%end;
+
+%img_right = imfilter(df.img_right_bw, h, 'replicate');
+%for i = 1:130
+%    img_right = imfilter(img_right, h, 'replicate');
+%end;
+
+%dil_map = edge(img, 'canny');
+%dil_map = bwmorph(dil_map, 'dilate');
+
+%dil_map_right = edge(img_right, 'canny');
+%dil_map_right = bwmorph(dil_map_right, 'dilate');
+
+%% LIGHT STUFF = MORE FINETUNING
+thresh_img = thresholding(df.img_left_bw, 0.68, 0.78);
+img = img + 2 * thresh_img;
+dil_map = img > 1;
+
+thresh_img = thresholding(df.img_right_bw, 0.68, 0.78);
+img_right = img_right + 2 * thresh_img;
+dil_map_right = img_right > 1;
 
 % thresh_img = thresholding(img, 0.68, .78);
 % thresh_img = img + (2 * thresh_img);
@@ -28,8 +67,8 @@ dil_map_right = img_right < 0.15;
 % figure(7878);
 % imshow(thresh_img);
 
-edge_map = edge(df.img_left_bw, 'canny');
-edge_map = bwmorph(edge_map, 'dilate');
+%edge_map = edge(df.img_left_bw, 'canny');
+%edge_map = bwmorph(edge_map, 'dilate');
 
 %edge_map = bwmorph(edge_map, 'dilate');
 
@@ -39,8 +78,7 @@ edge_map = bwmorph(edge_map, 'dilate');
 % figure(999);
 % imshow(img);
 
-% Luke, the DARK side is stronger! (.15 was the best so far, w/ or w/o erosion)
-dil_map = img < 0.15;
+
 
 figure(666);
 imshow(dil_map);
@@ -111,7 +149,7 @@ for i = 1:length(snake_list)
     [geom iner cpmo] = polygeom(snake(:, 2), snake(:, 1));
     plot(geom(2), geom(3), 'Marker', '.', 'Color', 'blue');
     
-    snake_data_list{i} = RegionCorrData(snake, boxes(i, :)); 
+    snake_data_list{i} = SnakeCorrData(snake, boxes(i, :)); 
 end;
 
 for i = 1:length(snake_list_right)
@@ -119,7 +157,7 @@ for i = 1:length(snake_list_right)
     snake_right = snake_list_right{i};
     plot(snake_right(:, 2), snake_right(:, 1), 'Marker', 'o', 'Color', 'g');
     
-    snake_data_list_right{i} = RegionCorrData(snake_right, boxes_right(i, :));
+    snake_data_list_right{i} = SnakeCorrData(snake_right, boxes_right(i, :));
 end;
 
 fprintf('LEFT SNAKES COUNT: %d; RIGHT SNAKES COUNT: %d\n', length(snake_data_list), length(snake_data_list_right));

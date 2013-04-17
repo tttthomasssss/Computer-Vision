@@ -1,9 +1,9 @@
-classdef RegionCorrData<handle
-    %REGIONCORRDATA Summary of this class goes here
+classdef SnakeCorrData<handle
+    %SNAKECORRDATA Summary of this class goes here
     %   Detailed explanation goes here
     
     methods(Access = public)
-        function obj = RegionCorrData(snake, bb)
+        function obj = SnakeCorrData(snake, bb)
             obj.collect_data(snake, bb)
         end;
     end

@@ -113,7 +113,7 @@ classdef SnakeFactory<handle
                 %x_extl_force = x + obj.snake_alpha * (((xl + xr) / 2) - x);
                 %x_intl_force = obj.snake_beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
                 x_extl_force = x + alpha * (((xl + xr) / 2) - x);
-                x_intl_force = beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols))); 
+                x_intl_force = beta * abs(image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols))); 
                 
                 % Prevent the snake point from going out of bounds
                 x_new = min(round(x_extl_force + x_intl_force), img_rows);
@@ -127,7 +127,7 @@ classdef SnakeFactory<handle
                     %x_extl_force = x + obj.snake_alpha * (((xl + xr) / 2) - x);
                     %x_intl_force = obj.snake_beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
                     x_extl_force = x + alpha * (((xl + xr) / 2) - x);
-                    x_intl_force = beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
+                    x_intl_force = beta * abs(image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
                     
                     x_new = min(round(x_extl_force + x_intl_force), img_rows);
                     
@@ -140,7 +140,7 @@ classdef SnakeFactory<handle
                 %y_extl_force = y + obj.snake_alpha * (((yl + yr) / 2) - y);
                 %y_intl_force = obj.snake_alpha * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                 y_extl_force = y + alpha * (((yl + yr) / 2) - y);
-                y_intl_force = beta * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
+                y_intl_force = beta * abs(image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                 
                 y_new = min(round(y_extl_force + y_intl_force), img_cols);
                 
@@ -153,7 +153,7 @@ classdef SnakeFactory<handle
                     %y_extl_force = y + obj.snake_alpha * (((yl + yr) / 2) - y);
                     %y_intl_force = obj.snake_alpha * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                     y_extl_force = y + alpha * (((yl + yr) / 2) - y);
-                    y_intl_force = beta * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
+                    y_intl_force = beta * abs(image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                     
                     y_new = min(round(y_extl_force + y_intl_force), img_cols);
                     
@@ -354,7 +354,6 @@ classdef SnakeFactory<handle
             
             e = entropy(bb_img);
             
-            disp(e);
             beta = e;
             alpha = 1 / e;
         end;

@@ -71,8 +71,6 @@ classdef CorrespondenceFactory<handle
                         % feature (in which case replace it!)
                         if matched_diffs(matched_index, 1) == 0 || matched_diffs(matched_index, 1) > min_diff
                             
-                            disp('Suitable match found!');
-                            
                             matched_diffs(matched_index, 1) = min_diff;
                             match_count = match_count + 1;
                             
@@ -94,11 +92,7 @@ classdef CorrespondenceFactory<handle
                             correspondence_matrix(3, match_count) = geom(3);
                             correspondence_matrix(4, match_count) = geom(2);
                         end;
-                    else
-                        disp('No suitable snake match found!');
                     end;
-                else
-                    disp('Snake too small!');
                 end;
             end;
         end;
@@ -185,15 +179,13 @@ classdef CorrespondenceFactory<handle
                         % Check if its a new or a better match
                         if (matched_diffs(matched_index, 1) == 0 || matched_diffs(matched_index) > min_diff)
                             
-                            disp('Suitable line match found!');
-                            
                             match_count = match_count + 1;
                             matched_diffs(matched_index, 1) = min_diff;
                             
-                            %figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
-                            %plot([min_diff_line.start_point(1, 1) min_diff_line.end_point(1, 1)], [min_diff_line.start_point(1, 2) min_diff_line.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
-                            %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
-                            %plot([right_hough_data.start_point(1, 1) right_hough_data.end_point(1, 1)], [right_hough_data.start_point(1, 2) right_hough_data.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+                            figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                            plot([min_diff_line.start_point(1, 1) min_diff_line.end_point(1, 1)], [min_diff_line.start_point(1, 2) min_diff_line.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+                            subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                            plot([right_hough_data.start_point(1, 1) right_hough_data.end_point(1, 1)], [right_hough_data.start_point(1, 2) right_hough_data.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
                             
                             % Store Correspondences
                             correspondence_matrix(1, match_count) = min_diff_line.mid_point(1, 2);
@@ -202,11 +194,7 @@ classdef CorrespondenceFactory<handle
                             correspondence_matrix(3, match_count) = right_hough_data.mid_point(1, 2);
                             correspondence_matrix(4, match_count) = right_hough_data.mid_point(1, 1);
                         end;
-                    else
-                        disp('No suitable match found!');
                     end;
-                else
-                    disp('Line too short!');
                 end;
             end;
         end;
@@ -265,8 +253,6 @@ classdef CorrespondenceFactory<handle
                                 min_diff_corner = left_corner_data;
                                 matched_index = j;
                             end;
-                        else
-                            disp('Corner Bounding Box too large!');
                         end;
                         
                         % Check if diff does not exceed threshold
@@ -275,32 +261,23 @@ classdef CorrespondenceFactory<handle
                             % Check if its a new or a better match
                             if (matched_diffs(matched_index, 1) == 0 || matched_diffs(matched_index) > min_diff)
                             
-                                disp('Suitable corner match found!');
-                            
                                 match_count = match_count + 1;
                                 matched_diffs(matched_index, 1) = min_diff;
                                 
-                                %figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
-                                %plot(min_diff_corner.bb_mid_point(1, 2), min_diff_corner.bb_mid_point(1, 1), '.','Color', 'g');
-                                %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
-                                %plot(right_corner_data.bb_mid_point(1, 2), right_corner_data.bb_mid_point(1, 1), '.', 'Color', 'g');
+                                figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                                plot(min_diff_corner.bb_mid_point(1, 2), min_diff_corner.bb_mid_point(1, 1), '.','Color', 'g');
+                                subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                                plot(right_corner_data.bb_mid_point(1, 2), right_corner_data.bb_mid_point(1, 1), '.', 'Color', 'g');
                                 
                                 correspondence_matrix(1, match_count) = min_diff_corner.bb_mid_point(1, 1);
                                 correspondence_matrix(2, match_count) = min_diff_corner.bb_mid_point(1, 2);
                                 correspondence_matrix(3, match_count) = right_corner_data.bb_mid_point(1, 1);
                                 correspondence_matrix(4, match_count) = right_corner_data.bb_mid_point(1, 2);
                                 
-                            else
-                                disp('No suitable match found!');
                             end;
-                        else
-                            disp('No suitable match found!');
                         end;
                     end;
-                else
-                    disp('Corner Bounding Box too large!');
                 end;
-                
             end;
         end;
     
@@ -348,8 +325,6 @@ classdef CorrespondenceFactory<handle
                             min_diff = impurity;
                             matched_index = j;
                             min_diff_qt = left_qt_data;
-                            
-                            fprintf('IMPURITY: %f\n', impurity);
                         end;
                     end;
                     if (min_diff <=  Consts.QUADTREE_DIFF_TOLERANCE)

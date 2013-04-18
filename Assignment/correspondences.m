@@ -3,17 +3,17 @@ function corrs = correspondences(im1, im2)
     disp('correspondences - START...');
     
     % Check if bw img, if not convert
-    if ~is_binary_image(im1)
+    s = size(im1);
+    if (length(s) > 2)
         disp('Colour Image detected, will convert to grayscale image!');
-        t = graythresh(im1);
-        im1 = im2bw(im1, t);
+        im1 = rgb2gray(im1);
         disp('Colour to grayscale conversion done!');
     end;
     
-    if ~is_binary_image(im2)
+    s = size(im2);
+    if (length(s) > 2)
         disp('Colour Image detected, will convert to grayscale image!');
-        t = graythresh(im2);
-        im2 = im2bw(im2, t);
+        im2 = rgb2gray(im2);
         disp('Colour to grayscale conversion done!');
     end;
     

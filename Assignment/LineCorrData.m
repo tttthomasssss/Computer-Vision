@@ -4,7 +4,7 @@ classdef LineCorrData<handle
     
     methods (Access = public)
         function obj = LineCorrData(houghline)
-            obj.collect_data(houghline)
+            obj.collect_data(houghline);
         end;
     end;
     
@@ -29,7 +29,6 @@ classdef LineCorrData<handle
             mid_x = min(houghline.point2(1, 1), houghline.point1(1, 1)) + (abs(houghline.point2(1, 1) - houghline.point1(1, 1)) / 2);
             mid_y = min(houghline.point2(1, 2), houghline.point1(1, 2)) + (abs(houghline.point2(1, 2) - houghline.point1(1, 2)) / 2);
             obj.mid_point = [mid_x mid_y];
-            %obj.mid_point = abs(houghline.point2 - houghline.point1) / 2;
         end;
     end;
     

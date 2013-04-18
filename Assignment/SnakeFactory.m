@@ -61,10 +61,8 @@ classdef SnakeFactory<handle
             for i = 1:bb_rows
                 [xs ys] = obj.get_basic_snake_for_feature(bb_matrix(i, :));
                 initial_snake_list{i} = [xs ys];
-                disp(initial_snake_list);
             end;
-            disp(initial_snake_list);
-        end
+        end;
         
         function snake_list = init_and_fit_snakes(obj, image, bb_matrix)
         
@@ -78,7 +76,7 @@ classdef SnakeFactory<handle
                 snake_list{i} = obj.fit_snake(image, initial_snake_list{i}, alpha, beta);
             end;
             
-        end
+        end;
     end
     
     properties (GetAccess = public, SetAccess = public)
@@ -97,8 +95,6 @@ classdef SnakeFactory<handle
             snake = zeros(size(init_control_points));
             
             [img_rows img_cols] = size(image);
-            
-            disp(size(image));
             
             for i = 1:length(init_control_points)
                 x = init_control_points(i, 1);

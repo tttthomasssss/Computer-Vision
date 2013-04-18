@@ -1,6 +1,6 @@
 function next = get_next_power_of_2(n)
 %GET_NEXT_POWER_OF_2 Summary of this function goes here
-%   Detailed explanation goes here
+%   return next power of 2 of n
     
     c = 1;
     

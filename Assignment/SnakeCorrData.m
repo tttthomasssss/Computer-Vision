@@ -4,7 +4,7 @@ classdef SnakeCorrData<handle
     
     methods(Access = public)
         function obj = SnakeCorrData(snake, bb)
-            obj.collect_data(snake, bb)
+            obj.collect_data(snake, bb);
         end;
     end
     

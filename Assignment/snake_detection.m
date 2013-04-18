@@ -14,7 +14,10 @@ img = df.img_left_bw;
 h = fspecial('gauss', [5 5]);
 thresh_img = filter2(h, img);
 
-%img = df.dilate_grayscale_img(df.img_left_bw, 1, 'diamond', 3);
+%img = df.dilate_grays%figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                                %plot(min_diff_corner.bb_mid_point(1, 2), min_diff_corner.bb_mid_point(1, 1), '.','Color', 'g');
+                                %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                                %plot(right_corner_data.bb_mid_point(1, 2), right_corner_data.bb_mid_point(1, 1), '.', 'Color', 'g');cale_img(df.img_left_bw, 1, 'diamond', 3);
 img = imfilter(df.img_left_bw, h);
 img = imfilter(img, h);
 
@@ -25,13 +28,6 @@ img_right = imfilter(img_right, h);
 % Luke, the DARK side is stronger! (.15 was the best so far, w/ or w/o erosion)
 %dil_map = img < 0.15;
 %dil_map_right = img_right < 0.15;
-
-%% EDGE STUFF = OK STUFF
-%dil_map = edge(img, 'canny');
-%dil_map = bwmorph(dil_map, 'dilate');
-
-%dil_map_right = edge(img_right, 'canny');
-%dil_map_right = bwmorph(dil_map_right, 'dilate');
 
 %% GAUSS STUFF = NOT BAD AT ALL
 % For Canny edge detector use 50 iterations
@@ -52,39 +48,40 @@ img_right = imfilter(img_right, h);
 %dil_map_right = edge(img_right, 'canny');
 %dil_map_right = bwmorph(dil_map_right, 'dilate');
 
-%% LIGHT STUFF = MORE FINETUNING
-thresh_img = thresholding(df.img_left_bw, 0.68, 0.78);
-img = img + 2 * thresh_img;
-dil_map = img > 1;
+%% VERY LIGHT STUFF (NO MORPHOLOGICAL OPS!!!)
+%thresh_img = thresholding(df.img_left_bw, 0.9, 0.95);
+%img = img + 2 * thresh_img;
+%dil_map = img > 1;
 
-thresh_img = thresholding(df.img_right_bw, 0.68, 0.78);
-img_right = img_right + 2 * thresh_img;
-dil_map_right = img_right > 1;
-
-% thresh_img = thresholding(img, 0.68, .78);
-% thresh_img = img + (2 * thresh_img);
-
-% figure(7878);
-% imshow(thresh_img);
+%thresh_img = thresholding(df.img_right_bw, 0.9, 0.95);
+%img_right = img_right + 2 * thresh_img;
+%dil_map_right = img_right > 1;
 
 %edge_map = edge(df.img_left_bw, 'canny');
 %edge_map = bwmorph(edge_map, 'dilate');
 
 %edge_map = bwmorph(edge_map, 'dilate');
 
-% figure(567);
-% imshow(edge_map);
+%figure(666);
+%imshow(dil_map);
 
-% figure(999);
-% imshow(img);
+%figure(6666);
+%imshow(dil_map_right);
+
+%% Bright Stuff
+%mean_gray_level = mean(df.img_left_bw(:));
+%dev = std(df.img_left_bw(:));
+thresh_img = thresholding(df.img_left_bw, 0.82, 0.88);
+img = img + 2 * thresh_img;
+dil_map = img > 1;
+
+mean_gray_level = mean(df.img_right_bw(:));
+dev = std(df.img_right_bw(:));
+thresh_img = thresholding(df.img_right_bw, 0.82, 0.88);
+img_right = img_right + 2 * thresh_img;
+dil_map_right = img_right > 1;
 
 
-
-figure(666);
-imshow(dil_map);
-
-figure(6666);
-imshow(dil_map_right);
 %thresh_img = img - (2 * dil_map);
 %figure(667);
 %imshow(thresh_img);

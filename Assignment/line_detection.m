@@ -33,6 +33,11 @@ edge_map_right = edge(img_right, 'canny');
 edge_map_right = bwmorph(edge_map_right, 'dilate');
 figure(5454); imshow(edge_map_right);
 
+lf = LineFactory();
+lines = lf.retrieve_hough_lines(edge_map);
+lines_right = lf.retrieve_hough_lines(edge_map_right);
+
+%{
 % Do the Hough Transform
 [H, theta, rho] = hough(edge_map, 'RhoResolution', 2);
 
@@ -116,7 +121,7 @@ for k = 1:length(lines_right)
         
     end;
 end;
-
+%}
 %{
 % MATCH LINES HERE 
 match_count = 0;
@@ -290,6 +295,10 @@ corr_factory = CorrespondenceFactory(df.img_right_bw, df.img_left_bw);
 correspondences = corr_factory.match_lines(lines_right, lines);
 
 stereo_display(df.img_left_bw, df.img_right_bw, correspondences);
+
+% Recreate Scene from Houghlines
+figure; imshow(lf.recreate_scene_from_houghlines(lines, edge_map));
+figure; imshow(lf.recreate_scene_from_houghlines(lines_right, edge_map));
 
 %{ 
 

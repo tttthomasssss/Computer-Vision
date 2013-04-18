@@ -26,8 +26,9 @@ classdef CorrespondenceFactory<handle
                 min_diff = Inf('double');
                 matched_index = 0;
                 
-                % Don't bother about small snakes
-                if (right_snake_data.snake_area > Consts.MIN_SNAKE_AREA)
+                % Don't bother about small snakes or snakes with a bad
+                % aspect ratio
+                if (right_snake_data.snake_area > Consts.MIN_SNAKE_AREA && (min(right_snake_data.snake_height, right_snake_data.snake_width) / max(right_snake_data.snake_height, right_snake_data.snake_width)) > Consts.MIN_SNAKE_ASPECT_RATIO)
                     
                     % Loop the left_snake_list to find a minimum match
                     for j = 1:length(left_snake_data_list)
@@ -77,6 +78,12 @@ classdef CorrespondenceFactory<handle
                             
                             % Store data in correspondences matrix
                             right_snake = right_snake_list{i};
+                            
+                            % Own comparison plot
+                            figure; subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                            plot(min_diff_snake(:, 2), min_diff_snake(:, 1), 'Marker', 'o', 'Color', 'g');
+                            subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                            plot(right_snake(:, 2), right_snake(:, 1), 'Marker', 'o', 'Color', 'g');
                             
                             % Store Correspondences
                             [geom iner cpmo] = polygeom(min_diff_snake(:, 2), min_diff_snake(:, 1));
@@ -183,6 +190,11 @@ classdef CorrespondenceFactory<handle
                             match_count = match_count + 1;
                             matched_diffs(matched_index, 1) = min_diff;
                             
+                            %figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                            %plot([min_diff_line.start_point(1, 1) min_diff_line.end_point(1, 1)], [min_diff_line.start_point(1, 2) min_diff_line.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+                            %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                            %plot([right_hough_data.start_point(1, 1) right_hough_data.end_point(1, 1)], [right_hough_data.start_point(1, 2) right_hough_data.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+                            
                             % Store Correspondences
                             correspondence_matrix(1, match_count) = min_diff_line.mid_point(1, 2);
                             correspondence_matrix(2, match_count) = min_diff_line.mid_point(1, 1);
@@ -268,6 +280,11 @@ classdef CorrespondenceFactory<handle
                                 match_count = match_count + 1;
                                 matched_diffs(matched_index, 1) = min_diff;
                                 
+                                %figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                                %plot(min_diff_corner.bb_mid_point(1, 2), min_diff_corner.bb_mid_point(1, 1), '.','Color', 'g');
+                                %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                                %plot(right_corner_data.bb_mid_point(1, 2), right_corner_data.bb_mid_point(1, 1), '.', 'Color', 'g');
+                                
                                 correspondence_matrix(1, match_count) = min_diff_corner.bb_mid_point(1, 1);
                                 correspondence_matrix(2, match_count) = min_diff_corner.bb_mid_point(1, 2);
                                 correspondence_matrix(3, match_count) = right_corner_data.bb_mid_point(1, 1);
@@ -285,6 +302,76 @@ classdef CorrespondenceFactory<handle
                 end;
                 
             end;
+        end;
+    
+        function correspondence_matrix = match_quadtrees(obj, right_quadtree_data_list, left_quadtree_data_list)
+            
+            correspondence_matrix = zeros(4, 1);
+            
+            match_count = 0;
+            matched_diffs = zeros(length(right_quadtree_data_list), 1);
+            
+            for i = 1:length(right_quadtree_data_list)
+                
+                right_qt_data = right_quadtree_data_list{i, 1};
+                size_right_qt = size(right_qt_data.blocks);
+                
+                for j = 1:length(left_quadtree_data_list)
+                    
+                    min_diff = Inf('double');
+                    min_diff_qt = {};
+                    matched_index = 0;
+                    
+                    left_qt_data = left_quadtree_data_list{j, 1};
+                    size_left_qt = size(left_qt_data.blocks);
+                    
+                    % If the Quadtrees, are not of the same size, ignore them
+                    % straight away
+                    if (norm(size_left_qt - size_right_qt) == 0 && right_qt_data.bb(1, 3) * right_qt_data.bb(1, 4) > Consts.MIN_QUADTREE_BB_SIZE)
+                        
+                        % Calculate Weight (= Normalised Euclidean Distance, sent through a Polynomial)
+                        euclidean_distance = norm(left_qt_data.bb_mid_point - right_qt_data.bb_mid_point);
+                        norm_euclidean_dist = euclidean_distance / norm([Consts.MAX_VERTICAL_DISPARITY Consts.MAX_HORIZONTAL_DISPARITY]);
+                            
+                        % Apply Polynomial to weight (2 * pi * ((norm_euclidean_dist - 1) ^ 2))
+                        % This function describes a steeply rising
+                        % parabola, centered around x = 1, this has the
+                        % effect of symmetrically amplyfing too close
+                        % matches and too far away matches
+                        weight = ceil(2 * pi * ((norm_euclidean_dist - 1) ^ 2));
+                        
+                        diff = right_qt_data.blocks - left_qt_data.blocks;
+                        
+                        impurity = length(find(diff~=0)) * weight;
+                        
+                        if (length(impurity) < min_diff)
+                            min_diff = impurity;
+                            matched_index = j;
+                            min_diff_qt = left_qt_data;
+                            
+                            fprintf('IMPURITY: %f\n', impurity);
+                        end;
+                    end;
+                    if (min_diff <=  Consts.QUADTREE_DIFF_TOLERANCE)
+                        if (matched_diffs(matched_index, 1) == 0 || matched_diffs(matched_index) > min_diff)
+                            
+                            match_count = match_count + 1;
+                            matched_diffs(matched_index, 1) = min_diff;
+                            
+                            figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                            rectangle('Position', min_diff_qt.bb, 'LineWidth', 1, 'EdgeColor', 'r');
+                            subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                            rectangle('Position', right_qt_data.bb, 'LineWidth', 1, 'EdgeColor', 'r');
+                            
+                            correspondence_matrix(1, match_count) = min_diff_qt.bb_mid_point(1, 1);
+                            correspondence_matrix(2, match_count) = min_diff_qt.bb_mid_point(1, 2);
+                            correspondence_matrix(3, match_count) = right_qt_data.bb_mid_point(1, 1);
+                            correspondence_matrix(4, match_count) = right_qt_data.bb_mid_point(1, 2);
+                        end;
+                    end;
+                end;
+            end;
+            
         end;
     end;
     

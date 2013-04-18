@@ -319,9 +319,6 @@ classdef SnakeFactory<handle
             
             bb_img = curr_img(min_row:max_row, min_col:max_col);
             
-            % Get Mean Gray Level of Image
-            mean_gray_level = mean(bb_img(:));
-            
             % Get Gray Level of central point in image
             center_col = min_col + round(curr_bounding_box(1, 3) ./ 2);
             center_row = min_row + round(curr_bounding_box(1, 4) ./ 2);
@@ -334,11 +331,6 @@ classdef SnakeFactory<handle
             corner_gray_levels(1, 2) = bb_img(1, end);
             corner_gray_levels(1, 3) = bb_img(end, 1);
             corner_gray_levels(1, 4) = bb_img(end, end);
-            
-            fprintf('OVERALL MEAN GRAY LEVEL: %f\n', mean_gray_level);
-            fprintf('CENTER GRAY LEVEL: %f\n', center_gray_level);
-            fprintf('CORNER GRAY LEVELS: ');
-            disp(corner_gray_levels);
             
             beta =  1 ./ abs(mean(corner_gray_levels) - center_gray_level);
             alpha = 1 ./ beta;
@@ -354,8 +346,14 @@ classdef SnakeFactory<handle
             
             e = entropy(bb_img);
             
-            beta = e;
-            alpha = 1 / e;
+            % In case entropy should be zero, fallback to gray scale based
+            % weights
+            if (e <= 0)
+                [alpha beta] = obj.smart_weights(curr_img, curr_bounding_box);
+            else
+                beta = e;
+                alpha = 1 / beta;
+            end;
         end;
     end
     

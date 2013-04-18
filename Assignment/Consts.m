@@ -26,6 +26,7 @@ classdef Consts
         MAX_ITERATIONS              = 5000;
         MIN_SNAKE_AREA              = 1200;
         MAX_SNAKE_DIFF_TOLERANCE    = 15000;
+        MIN_SNAKE_ASPECT_RATIO      = 0.1;
         
         % Bounding Box Constants
         MIN_EDGE_LENGTH     = 30;
@@ -41,16 +42,14 @@ classdef Consts
         CORNER_FRAME_SIZE           = 30;
         MAX_CORNER_DIFF_TOLERANCE   = 0.15;
         
-        % Correspondence Constants
-        CORRESPONDENCE_BY_CORRELATION   = 1;
+        % Quadtree Constants
+        QUADTREE_IMPURITY_TOLERANCE = 0.1;
+        QUADTREE_DIFF_TOLERANCE     = 1000;
+        MIN_QUADTREE_BB_SIZE        = 2048;
         
         % Disparity Constants
         MAX_VERTICAL_DISPARITY      = 50;
         MAX_HORIZONTAL_DISPARITY    = 100;
-    end
-    
-    methods
-    end
-    
+    end;
 end
 

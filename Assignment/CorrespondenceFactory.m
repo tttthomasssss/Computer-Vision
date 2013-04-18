@@ -1,6 +1,9 @@
 classdef CorrespondenceFactory<handle
-    %CORRESPONDENCEFACTORY Summary of this class goes here
-    %   Detailed explanation goes here
+    %CORRESPONDENCEFACTORY central class of matching extracted features
+    %from the 2 given images
+    %   
+    %   May further be extensible in case new methods are implemented for
+    %   extracting features (eg. Colour self-similarity)
     
     methods (Access = public)
         function obj = CorrespondenceFactory(right_img_bw, left_img_bw)
@@ -9,6 +12,8 @@ classdef CorrespondenceFactory<handle
         end;
         
         function correspondence_matrix = match_snakes(obj, right_snake_list, right_bb_matrix, left_snake_list, left_bb_matrix)
+        %MATCH_SNAKES tries to match snakes extracted from img1 in img2 and
+        %returns a correspondence_matrix
             
             % Get the snake data
             right_snake_data_list = obj.get_data_list_from_snake_and_bb_matrix(right_snake_list, right_bb_matrix);
@@ -78,10 +83,10 @@ classdef CorrespondenceFactory<handle
                             right_snake = right_snake_list{i};
                             
                             % Own comparison plot
-                            figure; subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
-                            plot(min_diff_snake(:, 2), min_diff_snake(:, 1), 'Marker', 'o', 'Color', 'g');
-                            subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
-                            plot(right_snake(:, 2), right_snake(:, 1), 'Marker', 'o', 'Color', 'g');
+                            %figure; subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                            %plot(min_diff_snake(:, 2), min_diff_snake(:, 1), 'Marker', 'o', 'Color', 'g');
+                            %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                            %plot(right_snake(:, 2), right_snake(:, 1), 'Marker', 'o', 'Color', 'g');
                             
                             % Store Correspondences
                             [geom iner cpmo] = polygeom(min_diff_snake(:, 2), min_diff_snake(:, 1));
@@ -98,7 +103,9 @@ classdef CorrespondenceFactory<handle
         end;
         
         function correspondence_matrix = match_lines(obj, right_hough_lines, left_hough_lines)
-            
+        %MATCH_LINES matches lines extracted from one image to the other
+        %and returns a correspondence matrix
+        
             correspondence_matrix = zeros(4, 1);
             
             % Get the line data
@@ -182,10 +189,10 @@ classdef CorrespondenceFactory<handle
                             match_count = match_count + 1;
                             matched_diffs(matched_index, 1) = min_diff;
                             
-                            figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
-                            plot([min_diff_line.start_point(1, 1) min_diff_line.end_point(1, 1)], [min_diff_line.start_point(1, 2) min_diff_line.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
-                            subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
-                            plot([right_hough_data.start_point(1, 1) right_hough_data.end_point(1, 1)], [right_hough_data.start_point(1, 2) right_hough_data.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+                            %figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                            %plot([min_diff_line.start_point(1, 1) min_diff_line.end_point(1, 1)], [min_diff_line.start_point(1, 2) min_diff_line.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
+                            %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                            %plot([right_hough_data.start_point(1, 1) right_hough_data.end_point(1, 1)], [right_hough_data.start_point(1, 2) right_hough_data.end_point(1, 2)], 'LineWidth', 1, 'Color', 'g');
                             
                             % Store Correspondences
                             correspondence_matrix(1, match_count) = min_diff_line.mid_point(1, 2);
@@ -200,6 +207,8 @@ classdef CorrespondenceFactory<handle
         end;
     
         function correspondence_matrix = match_corners(obj, right_corner_matrix, left_corner_matrix)
+        % MATCH_CORNERS matches corners extracted from the two images and
+        % returns a correspondence_matrix
         
             correspondence_matrix = zeros(4, 1);
             
@@ -264,10 +273,10 @@ classdef CorrespondenceFactory<handle
                                 match_count = match_count + 1;
                                 matched_diffs(matched_index, 1) = min_diff;
                                 
-                                figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
-                                plot(min_diff_corner.bb_mid_point(1, 2), min_diff_corner.bb_mid_point(1, 1), '.','Color', 'g');
-                                subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
-                                plot(right_corner_data.bb_mid_point(1, 2), right_corner_data.bb_mid_point(1, 1), '.', 'Color', 'g');
+                                %figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                                %plot(min_diff_corner.bb_mid_point(1, 2), min_diff_corner.bb_mid_point(1, 1), '.','Color', 'g');
+                                %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                                %plot(right_corner_data.bb_mid_point(1, 2), right_corner_data.bb_mid_point(1, 1), '.', 'Color', 'g');
                                 
                                 correspondence_matrix(1, match_count) = min_diff_corner.bb_mid_point(1, 1);
                                 correspondence_matrix(2, match_count) = min_diff_corner.bb_mid_point(1, 2);
@@ -282,7 +291,8 @@ classdef CorrespondenceFactory<handle
         end;
     
         function correspondence_matrix = match_quadtrees(obj, right_quadtree_data_list, left_quadtree_data_list)
-            
+        %MATCH_QUADTREES matches quadtrees extracted from the two images and returns a correspondence matrix    
+           
             correspondence_matrix = zeros(4, 1);
             
             match_count = 0;
@@ -333,10 +343,10 @@ classdef CorrespondenceFactory<handle
                             match_count = match_count + 1;
                             matched_diffs(matched_index, 1) = min_diff;
                             
-                            figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
-                            rectangle('Position', min_diff_qt.bb, 'LineWidth', 1, 'EdgeColor', 'r');
-                            subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
-                            rectangle('Position', right_qt_data.bb, 'LineWidth', 1, 'EdgeColor', 'r');
+                            %figure(match_count); subplot(1, 2, 1), imshow(obj.left_img_bw); hold on;
+                            %rectangle('Position', min_diff_qt.bb, 'LineWidth', 1, 'EdgeColor', 'r');
+                            %subplot(1, 2, 2), imshow(obj.right_img_bw); hold on;
+                            %rectangle('Position', right_qt_data.bb, 'LineWidth', 1, 'EdgeColor', 'r');
                             
                             correspondence_matrix(1, match_count) = min_diff_qt.bb_mid_point(1, 1);
                             correspondence_matrix(2, match_count) = min_diff_qt.bb_mid_point(1, 2);
@@ -351,13 +361,15 @@ classdef CorrespondenceFactory<handle
     end;
     
     properties (SetAccess = private, GetAccess = public)
-        left_img_bw;
-        right_img_bw;
+        left_img_bw;    % Left Image
+        right_img_bw;   % Right Image
     end
     
     methods (Access = private)
         
         function corner_data_list = get_data_list_from_corner_bbs(obj, corner_bbs, img)
+        %GET_DATA_LIST_FROM_CORNER_BBS construct data list from given
+        %corner bounding boxes
             corner_data_list = cell(length(corner_bbs), 1);
             
             for i = 1:length(corner_bbs)
@@ -366,6 +378,8 @@ classdef CorrespondenceFactory<handle
         end;
         
         function line_data_list = get_data_list_from_hough_lines(obj, hough_lines)
+        %GET_DATA_LIST_FROM_HOUGH_LINES construct data list from given
+        %houghlines
             line_data_list = cell(length(hough_lines), 1);
             
             for i = 1:length(hough_lines)
@@ -374,7 +388,8 @@ classdef CorrespondenceFactory<handle
         end;
         
         function snake_data_list = get_data_list_from_snake_and_bb_matrix(obj, snake_list, bb_matrix)
-            
+        %GET_DATA_LIST_FROM_SNAKE_AND_BB_MATRIX construct snake data list
+        %from given snakes and bounding boxes
             snake_data_list = cell(length(snake_list), 1);
             
             for i = 1:length(snake_list)
@@ -383,6 +398,8 @@ classdef CorrespondenceFactory<handle
         end;
         
         function line_avg_gray_level = get_line_avg_gray_level(obj, img, hough_data)
+        %GET_LINE_AVG_GRAY_LEVEL determines the mean gray level along a
+        %given line
             line_patch = img(hough_data.start_point(1, 2):hough_data.end_point(1, 2), hough_data.start_point(1, 1):hough_data.end_point(1, 1));
             
             line_avg_gray_level = mean(line_patch(:));

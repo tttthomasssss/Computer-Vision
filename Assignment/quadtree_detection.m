@@ -1,4 +1,5 @@
 function correspondences = quadtree_detection(img_right, img_left)
+%QUADTREE_DETECTION run the quadtree detection method
 
     % Apply Filters
     h = fspecial('gauss', [5 5]);

@@ -1,57 +1,31 @@
 classdef SnakeFactory<handle
-    %SNAKEFACTORY Summary of this class goes here
-    %   Detailed explanation goes here
+    %SNAKEFACTORY initialises and fits snakes
+    %   
+    %   Initialises a snake for a given feature defined by a bounding box
+    %   and fits a snake to it
     methods (Access = public)
-        function obj = SnakeFactory(preferred_n_control_points, alpha, beta)
-            
-            %{
-            TODO: Alpha Beta
-            
-            either 
-                use average gray level of whole bounding box
-            or
-                take center of gravity as intrinsic and average the corner
-                points as extrinsic
-            
-            
-            can use poly2mask to create a mask from the snake polygon and
-            then can do correlation
-            %}
-            
+        function obj = SnakeFactory(preferred_n_control_points)
+        %SNAKEFACTORY constructor
+        %
+        %   OBJ = SNAKEFACTORY(PREFERRED_N_CONTROL_POINTS) initialises the
+        %   object with the preferred number of control points and sets
+        %   default values for alpha and beta
+        %
+        %   OBJ = SNAKEFACTORY() initialises the objects and sets default
+        %   values for all input parameters
             if nargin < 1
                 preferred_n_control_points = Consts.DFLT_NUM_CONTROL_POINTS;
-                alpha = rand;
-                beta = rand;
-            elseif nargin < 2
-                alpha = rand;
-                beta = rand;
             end;
             
             obj.n_control_points = preferred_n_control_points;
-            obj.snake_alpha = alpha;
-            obj.snake_beta = beta;
-            
-            %{
-            % THIS WORKS
-            % Init a snake
-            [x y] = obj.get_basic_snake_for_feature(feature_bb);
-            
-            figure(2323);
-            imshow(image); hold on;
-            plot(y, x, 'Marker', 'o', 'Color', 'g');
-            
-            snake = obj.fit_snake(image, [x y]);
-            
-            a = snake(1:end, 1);
-            b = snake(1:end, 2);
-            
-            figure(3232);
-            imshow(image); hold on;
-            plot(b, a, 'Marker', 'o', 'Color', 'g');
-            %}
-        end
+        end;
         
         function initial_snake_list = init_snakes(obj, bb_matrix)
+        %INIT_SNAKES initialises snakes with the given bounding boxex
+        %
+        %   INITIAL_SNAKE_LIST = INIT_SNAKES(OBJ, BB_MATRIX) initialises
+        %   snakes based on the given bounding boxes 
+        
             obj.bb_matrix = bb_matrix;
             
             [bb_rows bb_cols] = size(bb_matrix);
@@ -65,6 +39,12 @@ classdef SnakeFactory<handle
         end;
         
         function snake_list = init_and_fit_snakes(obj, image, bb_matrix)
+        %INIT_AND_FIT_SNAKES initialises and fits snakes for the given
+        %bounding boxes
+        %
+        %   SNAKE_LIST = INIT_AND_FIT_SNAKES(OBJ, IMAGE, BB_MATRIX)
+        %   initialises and fits all snakes for the given image and
+        %   bounding boxes
         
             initial_snake_list = init_snakes(obj, bb_matrix);
             
@@ -81,8 +61,6 @@ classdef SnakeFactory<handle
     
     properties (GetAccess = public, SetAccess = public)
         n_control_points;   % Number of Control points for the snake
-        snake_alpha;        % Alpha value for snake
-        snake_beta;         % Beta value for snake
         x_snake;            % Vector containing x coordinates of final snake
         y_snake;            % Vector containing y coordinates of final snake
         bb_matrix;          % Bounding Box Matrix
@@ -91,7 +69,12 @@ classdef SnakeFactory<handle
     methods (Access = private)
         
         function snake = fit_snake(obj, image, init_control_points, alpha, beta)
-            
+        %FIT_SNAKE fits a snake on a feature
+        %
+        %   SNAKE = FIT_SNAKE(OBJ, IMAGE, INIT_CONTROL_POINTS, ALPHA, BETA)
+        %   fits and returns a snake given the image, the initial control
+        %   points and the weights, alpha and beta
+        
             snake = zeros(size(init_control_points));
             
             [img_rows img_cols] = size(image);
@@ -106,8 +89,6 @@ classdef SnakeFactory<handle
                 yr = init_control_points(min(i + 1, length(snake)), 2);
                 
                 % Fit x-coord of snake
-                %x_extl_force = x + obj.snake_alpha * (((xl + xr) / 2) - x);
-                %x_intl_force = obj.snake_beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
                 x_extl_force = x + alpha * (((xl + xr) / 2) - x);
                 x_intl_force = beta * abs(image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols))); 
                 
@@ -120,8 +101,6 @@ classdef SnakeFactory<handle
                     
                     x = x_new;
                     
-                    %x_extl_force = x + obj.snake_alpha * (((xl + xr) / 2) - x);
-                    %x_intl_force = obj.snake_beta * (image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
                     x_extl_force = x + alpha * (((xl + xr) / 2) - x);
                     x_intl_force = beta * abs(image(x, max(y - 1, 1)) - image(x, min(y + 1, img_cols)));
                     
@@ -133,8 +112,6 @@ classdef SnakeFactory<handle
                 snake(i, 1) = x_new;
                 
                 % Fit y-coord of snake
-                %y_extl_force = y + obj.snake_alpha * (((yl + yr) / 2) - y);
-                %y_intl_force = obj.snake_alpha * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                 y_extl_force = y + alpha * (((yl + yr) / 2) - y);
                 y_intl_force = beta * abs(image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                 
@@ -146,8 +123,6 @@ classdef SnakeFactory<handle
                     
                     y = y_new;
                     
-                    %y_extl_force = y + obj.snake_alpha * (((yl + yr) / 2) - y);
-                    %y_intl_force = obj.snake_alpha * (image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                     y_extl_force = y + alpha * (((yl + yr) / 2) - y);
                     y_intl_force = beta * abs(image(max(x - 1, 1), y) - image(min(x + 1, img_rows), y));
                     
@@ -163,10 +138,16 @@ classdef SnakeFactory<handle
             snake(length(init_control_points) + 1, 1) = snake(1, 1);
             snake(length(init_control_points) + 1, 2) = snake(1, 2);
             
-        end
+        end;
         
         function [xs ys] = get_basic_snake_for_feature(obj, feature_bb)
-            
+        % GET_BASIC_SNAKE_FOR_FEATURE initialises a snake for the given
+        % feature defined by its bounding box
+        %
+        %   [XS XY] = GET_BASIC_SNAKE_FOR_FEATURE(OBJ, FEATURE_BB)
+        %   initialises a snake for the given feature defined by its
+        %   bounding box and returns the snakes x and y coordinates
+        
             min_col = feature_bb(1, 1);
             min_row = feature_bb(1, 2);
             width = feature_bb(1, 3);
@@ -280,7 +261,11 @@ classdef SnakeFactory<handle
         end;
         
         function [control_points spacing] = smart_spacing(obj, width, height)
-            
+        %SMART_SPACING determines the number of control points and their spacing
+        %
+        %   [CONTROL_POINTS SPACING] = SMART_SPACING(OBJ, WIDTH, HEIGHT)
+        %   determins the number of control points and their spacing
+        %   determined by the width and height of the bounding box
             control_points = obj.n_control_points;
             
             % Circumference of the BB
@@ -307,7 +292,13 @@ classdef SnakeFactory<handle
         end;
         
         function [alpha beta] = smart_weights(obj, curr_img, curr_bounding_box)
-            
+        %SMART_WEIGHTS determines the weights for the intrinsic and
+        %extrinsic forces of the snake
+        %
+        %   [ALPHA BETA] = SMART_WEIGHTS(OBJ, CURR_IMG, CURR_BOUNDING_BOX)
+        %   determines the weights for the intrinsic and extrinsic forces
+        %   of the snake, based on the gray levels of the image patch
+        %   defined by the bounding box
             min_col = curr_bounding_box(1, 1);
             min_row = curr_bounding_box(1, 2);
             max_col = min_col + curr_bounding_box(1, 3);
@@ -333,6 +324,13 @@ classdef SnakeFactory<handle
         end;
         
         function [alpha beta] = entropy_weights(obj, curr_img, curr_bounding_box)
+        %ENTROPY_WEIGHTS determines the weights of the snake based on the
+        %entropy measure
+        %
+        %   [ALPHA BETA] = ENTROPY_WEIGHTS(OBJ, CURR_IMG,
+        %   CURR_BOUNDING_BOX) determines the weights for the intrinsic and
+        %   extrinsic forces of the snake based on the entropy of the gray
+        %   levels defined by the bounding box patch of the image
             min_col = curr_bounding_box(1, 1);
             min_row = curr_bounding_box(1, 2);
             max_col = min_col + curr_bounding_box(1, 3);
@@ -352,6 +350,5 @@ classdef SnakeFactory<handle
             end;
         end;
     end
-    
 end
 

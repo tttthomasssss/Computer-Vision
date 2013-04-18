@@ -1,5 +1,6 @@
 function correspondences = corner_detection(img_right, img_left)
- 
+%CORNER_DETECTION runs the corner extraction methods given the two images
+
     % Apply Filters
     h = fspecial('gauss', [11 2]);
     

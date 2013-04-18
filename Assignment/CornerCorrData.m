@@ -1,28 +1,29 @@
 classdef CornerCorrData<handle
-    %CORNERCORRDATA Summary of this class goes here
-    %   Detailed explanation goes here
+    %CORNERCORRDATA Encapsulates corner specific correspondence data
     
     methods (Access = public)
         function obj = CornerCorrData(corner_bb, img)
+        %CORNERCORRDATA constructor
             obj.img = img;
             obj.collect_data(corner_bb);
         end;
     end;
     
     properties (GetAccess = public, SetAccess = private)
-        img;
-        bb_width;
-        bb_height;
-        mid_point_gray_level;
-        avg_gray_level_box_corners;
-        avg_gray_level_box;
-        max_gray_level;
-        min_gray_level;
-        bb_mid_point;
+        img;                        % The Image
+        bb_width;                   % Bounding Box width
+        bb_height;                  % Bounding Box height
+        mid_point_gray_level;       % Bounding Box mid point gray level
+        avg_gray_level_box_corners; % Average gray level of bounding box corners
+        avg_gray_level_box;         % Average gray level of bounding box
+        max_gray_level;             % Maximum bounding box gray level
+        min_gray_level;             % Minimum bounding box gray level
+        bb_mid_point;               % Bounding Box mid point
     end;
     
     methods (Access = private)
         function collect_data(obj, corner_bb)
+        %COLLECT_DATA collects all data from the bounding box
             
             % Width & Height
             obj.bb_width = corner_bb(1, 3);
@@ -52,6 +53,8 @@ classdef CornerCorrData<handle
         end;
         
         function mid_point = get_bb_mid_point(obj, bb)
+        %GET_BB_MID_POINT determines and returns the mid point of the given
+        %bounding box
             min_col = bb(1, 1);
             min_row = bb(1, 2);
             

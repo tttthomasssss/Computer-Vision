@@ -1,4 +1,6 @@
 function correspondences = line_detection(img_right, img_left)
+%LINE_DETECTION runs the line feature extraction
+
     % Morph Left Image
     h = fspecial('gauss', [5 5]);
     img_left = imfilter(img_left, h, 'replicate');

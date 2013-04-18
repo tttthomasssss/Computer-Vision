@@ -1,12 +1,20 @@
 classdef LineFactory<handle
-    %LINEFACTORY Summary of this class goes here
-    %   Detailed explanation goes here
+    %LINEFACTORY extracts houghllines
     
     methods (Access = public)
         function obj = LineFactory()
         end;
         
         function lines = retrieve_hough_lines(obj, edge_map, threshold)
+        %RETRIEVE_HOUGH_LINES extracts the houghline from the given
+        %edge_map
+        %
+        %   LINES = RETRIEVE_HOUGH_LINES(OBJ, EDGE_MAP, THRESHOLD) extracts
+        %   the houghlines from the given image with the given threshold
+        %
+        %   LINES = RETRIEVE_HOUGH_LINES(OBJ, EDGE_MAP) extracts the
+        %   houghlnes from the given image, a default threshold is applied
+        
             if (nargin < 3)
                 threshold = 0.5;
             end;
@@ -24,7 +32,9 @@ classdef LineFactory<handle
         end;
         
         function img = recreate_scene_from_houghlines(obj, lines, edge_map)
-           
+        %RECREATE_SCENE_FROM_HOUGHLINES recreates the image by redrawing
+        %the houghlines
+        
             % Try to interpolate edge map
             size_img = size(edge_map);
 

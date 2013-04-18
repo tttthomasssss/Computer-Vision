@@ -1,5 +1,6 @@
 function correspondences = snake_detection(img_right, img_left)
-    
+%SNAKE_DETECTION run the snake detection given the two images
+
     % Apply Filter
     h = fspecial('gauss', [5 5]);
     
@@ -22,7 +23,7 @@ function correspondences = snake_detection(img_right, img_left)
     boxes_right = rd.detect_bounding_boxes(dil_map_right);
     
     % Create Snake
-    sf = SnakeFactory(Consts.DFLT_NUM_CONTROL_POINTS, 1, .01);
+    sf = SnakeFactory(Consts.DFLT_NUM_CONTROL_POINTS);
     snake_list_left = sf.init_and_fit_snakes(img_left, boxes_left);
     snake_list_right = sf.init_and_fit_snakes(img_right, boxes_right);
 

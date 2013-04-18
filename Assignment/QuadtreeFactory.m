@@ -1,13 +1,15 @@
 classdef QuadtreeFactory<handle
-    %QUADTREEFACTORY Summary of this class goes here
-    %   Detailed explanation goes here
+    %QUADTREEFACTORY extracting quadtrees from images via the bounding
+    %boxes
     
     methods (Access = public)
         function obj = QuadtreeFactory()
         end;
     
         function quadtree_data_list = init_quadtrees(obj, bb_matrix, img)
-            
+        %INIT_QUADTREES initialise and build the quadtrees from the image
+        %given a matrix with bounding boxes
+        
             quadtree_data_list = cell(length(bb_matrix), 1);
             size_img = size(img);
             

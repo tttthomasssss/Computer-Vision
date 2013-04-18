@@ -1,13 +1,24 @@
 classdef RegionDetector<handle
-    %REGIONDETECTOR Summary of this class goes here
-    %   Detailed explanation goes here
+    %REGIONDETECTOR detect (connected) regions in the image
+    %   
+    %   Detect regions and return bounding boxes or cluster nearby corners
+    %   together
     
     methods (Access = public)
         function obj = RegionDetector()
         end
         
         function bb_matrix = detect_bounding_boxes(obj, image, min_box_area, max_box_area)
-            
+        %DETECT_BOUNDING_BOXES detect and return bounding boxes in the
+        %image
+        %
+        %   BB_MATRIX = DETECT_BOUNDING_BOXES(OBJ, IMAGE, MIN_BOX_AREA,
+        %   MAX_BOX_AREA) detect and return bounding boxes in the given
+        %   image with constraints of minimum and maximum bounding box area
+        %
+        %   BB_MATRIX = DETECT_BOUNDING_BOXES(OBJ, IMAGE) detect and return
+        %   bounding boxes in the given image, suitable default constraints
+        %   for minimum and maximum bounding box area are applied
             if nargin < 3
                 min_box_area = Consts.MIN_BOX_AREA;
                 
@@ -51,10 +62,13 @@ classdef RegionDetector<handle
             
             bb_matrix = bb_matrix(1:worthy_objects - 1, :);
             
-        end
+        end;
         
         function corner_bins = cluster_corners(obj, corners)
-            
+        %CLUSTER_CORNERS clusters nearby corners together
+        %
+        %   CORNER_BINS = CLUSTER_CORNERS(OBJ, CORNERS) clusters the given
+        %   corners together in case they are within a specific range
             corner_bins = cell(1, 1);
             bin_count = 1;
             num_corners = length(corners);
@@ -77,7 +91,14 @@ classdef RegionDetector<handle
         end;
         
         function bb_matrix = extract_bounding_box_patches_from_corner_clusters(obj, corner_bins, img)
-            
+        %EXTRACT_BOUNDING_BOX_PATCHES_FROM_CORNER_CLUSTERS extracts patches
+        %from the given images with the corner clusters as their center of
+        %gravity
+        %
+        %   BB_MATRIX =
+        %   EXTRACT_BOUNDING_BOX_PATCHES_FROM_CORNER_CLUSTERS(OBJ,
+        %   CORNER_BINS, IMG) extract bounding box patches from the image
+        %   given the corner bins
             bb_matrix = zeros(length(corner_bins), 4);
             
             img_size = size(img);
@@ -125,7 +146,8 @@ classdef RegionDetector<handle
     
     methods (Access = private)
         function worthy = check_worthy_object(obj, height, width, min_box_area, max_box_area)
-            
+        %CHECK_WORTHY_OBJECT check whether an object neither is too big nor
+        %too small to be considered a useful feature
             worthy = ternary_conditional((height * width > min_box_area) && (height * width < max_box_area) , 1, 0);
         
         end

@@ -1,6 +1,5 @@
 classdef Consts
-    %CONSTS Summary of this class goes here
-    %   Detailed explanation goes here
+    %CONSTS Global class defining all constants
     
     properties (Constant = true)
         % Path Constants

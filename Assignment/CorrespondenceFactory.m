@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 classdef CorrespondenceFactory<handle
     %CORRESPONDENCEFACTORY central class of matching extracted features
     %from the 2 given images

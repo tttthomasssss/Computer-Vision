@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function bool = is_power_of_2(n)
 %IS_POWER_OF_2 determins whether n is a power of 2
     

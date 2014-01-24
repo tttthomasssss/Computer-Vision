@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 classdef QuadtreeFactory<handle
     %QUADTREEFACTORY extracting quadtrees from images via the bounding
     %boxes

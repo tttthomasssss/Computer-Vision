@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function img = feature_detection(image)
     
     % Hardcoded for the chess1.bmp image

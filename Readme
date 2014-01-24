@@ -1,0 +1,6 @@
+Some Matlab - Computer Vision code for a University assignment: The Stereo-Correspondence problem
+
+If you want to dig through the code (or even run it) start looking at main.m
+You may also want to correct the paths in Consts.m
+
+Some sample images are in the resources folder.

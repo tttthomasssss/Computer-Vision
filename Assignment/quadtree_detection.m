@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function correspondences = quadtree_detection(img_right, img_left)
 %QUADTREE_DETECTION run the quadtree detection method
 

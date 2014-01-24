@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function correspondences = corner_detection(img_right, img_left)
 %CORNER_DETECTION runs the corner extraction methods given the two images
 

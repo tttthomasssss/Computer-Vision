@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function correspondences = snake_detection(img_right, img_left)
 %SNAKE_DETECTION run the snake detection given the two images
 

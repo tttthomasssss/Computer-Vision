@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function edges = edge_detection(image, apply_smoothing, dark_threshold, light_threshold)
 
     % Horizontal & Vertical Differencing

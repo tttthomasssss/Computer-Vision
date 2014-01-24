@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 classdef DataFactory<handle
     %DATAFACTORY Summary of this class goes here
     %   Detailed explanation goes here

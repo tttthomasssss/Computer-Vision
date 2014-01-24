@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function thresh_img = thresholding(img, greater_than, less_than)
 %THRESHOLDING Applies a certain threshold interval to a grayscale image
 %

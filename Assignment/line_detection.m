@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function correspondences = line_detection(img_right, img_left)
 %LINE_DETECTION runs the line feature extraction
 

@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 classdef CornerCorrData<handle
     %CORNERCORRDATA Encapsulates corner specific correspondence data
     

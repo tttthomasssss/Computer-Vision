@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 classdef RegionDetector<handle
     %REGIONDETECTOR detect (connected) regions in the image
     %   

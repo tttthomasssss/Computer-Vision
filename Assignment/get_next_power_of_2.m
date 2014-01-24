@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function next = get_next_power_of_2(n)
 %GET_NEXT_POWER_OF_2 return next power of 2 of n
     

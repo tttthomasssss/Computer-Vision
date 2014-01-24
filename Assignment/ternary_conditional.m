@@ -1,3 +1,7 @@
+%	The MIT License (MIT)
+%
+% 	Copyright (c) 2013-2014 Thomas Kober
+%
 function result = ternary_conditional(condition, a, b)
 %TERNARY_CONDITIONAL evaluated condition, returns a in case condition == 1,
 %b otherwise
